@@ -1,0 +1,16 @@
+[package]
+name = "rustune-web"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+rustune-domain.workspace = true
+rustune-contracts.workspace = true
+leptos.workspace = true
+gloo-net.workspace = true
+console_error_panic_hook.workspace = true
+
+[lints]
+workspace = true

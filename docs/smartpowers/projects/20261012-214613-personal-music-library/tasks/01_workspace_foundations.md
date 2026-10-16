@@ -1,6 +1,6 @@
 # 01: 開発基盤とCI
 
-Status: Planned
+Status: Done
 Project: 20261012-214613-personal-music-library
 Requirements: NFR-001, NFR-002
 Depends on: None
@@ -49,6 +49,14 @@ Cargo.toml、Cargo.lock、rust-toolchain.toml、各crateのCargo.tomlと最小en
 空のDBや音源がなくてもビルドが通り、サーバー起動とWASMの最小画面表示ができる。
 
 ## Handoff notes
+
+### 実施結果（2026-10-16）
+
+- Rust 1.99.1、Trunk 0.21.14、4クレートworkspaceとCargo.lockを追加。
+- native/WASM別Clippy、cargo fmt、nativeテスト2件、Trunk release buildに合格。
+- 実Macの独立headless Chromeで1280px・390pxのWASM mount、HTTP接続、画像配信、横overflowなし、pageerrorなしを確認。再現コマンドはREADMEとscripts/check-foundation.mjs。
+- サーバーは127.0.0.1:3867。ライブラリ・取り込み・再生は未実装。現在の画面は開発基盤の接続確認。
+- アプリ内ブラウザ接続はsandboxPolicyメタデータ不足で利用できず、独立Chromeへ切り替えた。OSメディア操作・Chromeインストールの検証を代替したとは扱わない。
 
 - 前提タスクの成果と検証記録を確認してから着手する。未解決の設計変更は該当承認ゲートへ戻す。
 - 予定領域外の変更、共有Cargo設定・router・migrationへの変更が必要なら統合担当へ集約し、並行タスクの所有範囲を侵さない。

@@ -1,6 +1,7 @@
 # Implementation Plan
 
-Status: Draft
+Status: Approved
+Approved: 2026-10-16 by user
 Last updated: 2026-10-16
 Project: 20261012-214613-personal-music-library
 Design: ../DESIGN_DOC.md
@@ -8,7 +9,7 @@ Module design: ../MODULE_DESIGN.md
 
 ## Delivery strategy
 
-ユーザーが16タスクの粒度と依存順に合意したため詳細化した計画。合意はタスク構成への承認であり、この詳細計画全体の承認とは分ける。実装は詳細計画承認後に開始する。
+ユーザーが16タスクの粒度と依存順に合意したため詳細化した計画。2026-10-16の「では実装に入って」を詳細計画に基づく実装開始の承認として記録する。
 
 購入音源・ブラウザの成立性を先行検証し、共通型を固め、取り込み・管理・配信を実装する。その後WASM画面を接続して運用・受け入れを完成させる。UIはルートdesign.mdとAGENTS.mdを遵守する。ShouldのREQ-010/REQ-013も計画へ含め、延期は明示レビューする。
 
@@ -93,4 +94,4 @@ Cargo.toml・Cargo.lock、共通router、migration番号、全体CSS・AppShell�
 
 ## Review status
 
-タスク構成・依存順は合意済み。PLAN.mdと個別タスクの詳細はDraftとしてレビュー待ち。現時点ではコード実装・検証実行・OS起動設定変更は行っていない。
+タスク構成・依存順・詳細計画は承認済み。タスク01から依存順に実装する。OS起動設定の有効化は運用タスクの手順に従う。

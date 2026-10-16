@@ -1,0 +1,35 @@
+name: Rustune checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: rustup show
+      - name: Formatting
+        run: cargo fmt --all -- --check
+      - name: Native lint
+        run: cargo clippy --locked -p rustune-domain -p rustune-contracts -p rustune-server --all-targets -- -D warnings
+      - name: Native tests
+        run: cargo test --locked -p rustune-domain -p rustune-contracts -p rustune-server
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned toolchain
+        run: rustup show
+      - name: WASM lint
+        run: cargo clippy --locked -p rustune-web --target wasm32-unknown-unknown -- -D warnings
+      - name: Install Trunk
+        run: cargo install trunk --version 0.21.14 --locked
+      - name: Release build
+        working-directory: crates/web
+        run: trunk build --release --locked
