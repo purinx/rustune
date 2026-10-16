@@ -19,5 +19,7 @@ iTunes Storeで購入・ダウンロードしたDRMなしの`.m4a`ファイル�
 - DESIGN_DOC.md: Approved（2026-10-16 by user）。Leptos CSR + Axum/Tokio + SQLite/SQLxを中心とする全体設計。
 - MODULE_DESIGN.md: Approved（2026-10-16 by user）。モジュール境界、DTO、DB制約、取り込み・削除・復旧、WASM再生、CIの詳細設計。両設計のLGTMを受領。
 - 設計修正：ユーザーの賛同に基づきcoreをdomainへ改名。ドメイン型と不変条件はdomain、通信DTOはcontractsが所有する。
-- 次のゲート：実装タスクの粒度と依存順の合意。購入曲識別・Chrome挙動等の実機検証事項は承認済み設計に記載したとおり維持する。
-- 実装計画・実装は未着手。承認済みPRDは変更していない。
+- 実装タスク16件の粒度・依存順はユーザー合意済み（2026-10-16）。
+- tasks/PLAN.md: Draft。16件の個別タスクをPlannedで作成し、変更領域・手順・検証・受け入れ基準を具体化した。
+- 次のゲート：詳細実装計画のレビュー・承認。購入曲識別・Chrome挙動等の実機検証事項は先行タスクで検証する。
+- コード実装は未着手。承認済みPRDと設計書は変更していない。
