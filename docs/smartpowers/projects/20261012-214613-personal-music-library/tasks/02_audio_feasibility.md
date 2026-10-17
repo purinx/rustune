@@ -1,6 +1,6 @@
 # 02: 購入音源の識別・重複防止の検証
 
-Status: In Progress
+Status: Done
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-004, REQ-012, NFR-010
 Depends on: 01
@@ -48,6 +48,14 @@ experiments/audio/、同ディレクトリの検証コード・非機密fixture�
 採用パーサーと購入判定・同一性の根拠が記録され、実ファイル未確認の項目を合格扱いにしない。
 
 ## Handoff notes
+
+### 2026-10-18 完了・統合検証
+
+- 専用worktreeのsubagent成果`ebdad7c`をレビューしmainへ統合。採用候補はmp4-track 0.1.0、mp4ameta 0.13.0、top-level境界とmdat範囲を扱うmp4-atom 0.15.0の薄いアダプター。規則・判定表・制限は`experiments/audio/README.md`に記録した。
+- `itunes-tag-pattern-v1`でAACと購入由来タグの組合せを確認。タグは編集可能で、権利認証ではない。購入者の値は公開結果に含めない。
+- 合成12テスト成功（ローカル専用1件は通常実行で除外）。指定実音源の別パス一時コピー・メモリ内タグ編集テスト1件も成功。元ファイルは変更せず、一時コピーは自動削除。fmt・Clippy成功。統合担当もmain上で同じ検証を実施した。
+- 同じ音声のdigest不変、異なるpacketのdigest相違、mdat外sample参照の拒否を確認。全購入曲の網羅性や取得し直した音源の同一性は保証しない。
+- 06へ：上限付きRead+Seekへの製品化、全階層box数予算、設計の200 MiBと実験64 MiBの区別を実装・検証する。04/09へ：同じstore IDでもdigestが違う場合の識別衝突を明示し、異音声を黙って統合しない。
 
 ### 2026-10-16 実装記録
 
