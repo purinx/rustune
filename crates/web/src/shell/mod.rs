@@ -78,11 +78,61 @@ fn Shell() -> impl IntoView {
     }
 }
 
+/// 詳細画面（`/:key`・`/:id`）を持つセクション。`Routes`の定義と一致させる。
+const DETAIL_SECTIONS: [&str; 3] = ["/albums", "/artists", "/playlists"];
+
+/// `Routes`が実際に描画する画面に対応した見出しを返す。
+/// 既知セクション配下でも未定義のパス（`/library/missing`など）は`NotFound`と同じ見出しにする。
+/// ルーターは末尾スラッシュ1つを無視して照合するため（`/library/`はライブラリを描画）、同様に扱う。
 fn title_for_path(path: &str) -> &'static str {
+    let path = path.strip_suffix('/').unwrap_or(path);
     NAV.iter()
-        .find(|(href, _, _)| path == *href || path.starts_with(&format!("{href}/")))
+        .find(|(href, _, _)| {
+            path == *href
+                || (DETAIL_SECTIONS.contains(href)
+                    && path
+                        .strip_prefix(href)
+                        .and_then(|rest| rest.strip_prefix('/'))
+                        .is_some_and(|key| !key.is_empty() && !key.contains('/')))
+        })
         .map(|(_, label, _)| *label)
-        .unwrap_or("ページが見つかりません")
+        .unwrap_or(NOT_FOUND_TITLE)
+}
+
+const NOT_FOUND_TITLE: &str = "ページが見つかりません";
+
+#[cfg(test)]
+mod tests {
+    use super::{NOT_FOUND_TITLE, title_for_path};
+
+    #[test]
+    fn known_collection_and_detail_paths_use_section_titles() {
+        assert_eq!(title_for_path("/library"), "ライブラリ");
+        assert_eq!(title_for_path("/library/"), "ライブラリ");
+        assert_eq!(title_for_path("/albums/"), "アルバム");
+        assert_eq!(title_for_path("/albums/key/"), "アルバム");
+        assert_eq!(title_for_path("/albums"), "アルバム");
+        assert_eq!(title_for_path("/albums/key"), "アルバム");
+        assert_eq!(title_for_path("/artists/key"), "アーティスト");
+        assert_eq!(title_for_path("/playlists/0f8e"), "プレイリスト");
+        assert_eq!(title_for_path("/exclusions"), "除外した音源");
+    }
+
+    #[test]
+    fn unsupported_paths_under_known_sections_are_not_found() {
+        for path in [
+            "/library/missing",
+            "/albums/key/extra",
+            "/albums//",
+            "/favorites/x",
+            "/settings/advanced",
+            "/librar",
+            "/libraryx",
+            "/unknown",
+        ] {
+            assert_eq!(title_for_path(path), NOT_FOUND_TITLE, "{path}");
+        }
+    }
 }
 
 #[component]
@@ -183,7 +233,7 @@ fn PlayerRegion() -> impl IntoView {
 
 #[component]
 fn NotFound() -> impl IntoView {
-    view! { <EmptyState title="ページが見つかりません" description="ナビゲーションから移動先を選んでください。">
+    view! { <EmptyState title=NOT_FOUND_TITLE description="ナビゲーションから移動先を選んでください。">
         <A href="/library" attr:class="button-link">"ライブラリへ"</A>
     </EmptyState> }
 }
