@@ -2,7 +2,7 @@
 
 Status: Approved
 Approved: 2026-10-16 by user
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 Project: 20261012-214613-personal-music-library
 Design: ../DESIGN_DOC.md
 Module design: ../MODULE_DESIGN.md
@@ -75,7 +75,7 @@ Cargo.toml・Cargo.lock、共通router、migration番号、全体CSS・AppShell�
 ## Integration checkpoints
 
 1. 01: native/WASMのビルド・Lint・最小起動が通る。
-2. 02/03: 購入判定、再ダウンロード同一性、Chromeインストール・AAC・OS操作が実証される。不成立は設計へ戻し、未検証を完了としない。
+2. 02/03: 購入由来情報、同じ音源の別パスコピー・タグ差分の重複判定、Chromeインストール・AAC・OS操作が実証される。不成立は設計へ戻し、未検証を完了としない。
 3. 04: domain/DTO境界が固まり、後続並行実装の契約になる。
 4. 09: 手動・自動取り込み、再走査、各commit境界での復旧を統合確認。
 5. 11: 実APIから取り込み・検索・管理・Range配信を操作できる。
@@ -84,7 +84,7 @@ Cargo.toml・Cargo.lock、共通router、migration番号、全体CSS・AppShell�
 
 ## Plan risks
 
-- 02には実購入AACと再ダウンロード版、03/15/16には実Mac・実ブラウザが必要。着手時に利用可能性を確認し、無断購入や個人ファイル探索をしない。
+- 02には指定実音源、03/15/16には実Mac・実ブラウザが必要。着手時に利用可能性を確認し、無断購入や個人ファイル探索をしない。
 - 購入曲の判定規則・検証パーサーは02で確定する。失敗した場合の要件緩和を事前に仮定しない。
 - 14の画像は低解像度を許容するが用途条件の確認は残る。不成立ならShould延期・変更を明示する。
 - 本人向け再生音源の購入者タグは承認済み設計どおり保持し、管理DTO・画面・ログ・外部送信から除外する。

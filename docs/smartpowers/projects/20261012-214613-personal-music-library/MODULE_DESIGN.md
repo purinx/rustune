@@ -2,7 +2,7 @@
 
 Status: Approved
 Approved: 2026-10-16 by user
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 Project: 20261012-214613-personal-music-library
 PRD: ./PRD.md
 Parent design: ./DESIGN_DOC.md
@@ -34,7 +34,7 @@ flowchart TB
 | server::{bootstrap,config} | 起動、設定、終了、プロセスロック | db、recovery、import、http |
 | server::db | SQL、migration、更新トランザクション | domain |
 | server::source | root内の列挙と読み取り専用ハンドル | OSファイルAPI |
-| server::inspection | AAC構造・保護状態・購入情報の検証 | mp4ameta、domain::identity |
+| server::inspection | AAC構造・購入情報の検証 | mp4ameta、domain::identity |
 | server::storage | 一時保存、確定、削除、空き容量 | OSファイルAPI |
 | server::import | スケジューラ、取り込みオーケストレーション | source、inspection、storage、db |
 | server::library | 検索、編集、プレイリスト、削除・除外 | domain::metadata、db、storage |
@@ -66,7 +66,7 @@ PATCHは各フィールドを`Keep / Set(value) / Clear`の3状態で表す。JS
 | not_found / media_missing | 404 | 再同期または再取り込み |
 | revision_conflict / import_busy | 409 | 最新状態を読み直す |
 | source_permission_denied / storage_full | ジョブ項目、必要ならAPIエラー | 原因解消後に再試行 |
-| protected_audio / unsupported_codec / purchase_unverified | スキップ理由 | 内容変更まで自動再試行しない |
+| unsupported_codec / purchase_unverified | スキップ理由 | 内容変更まで自動再試行しない |
 | file_unstable | スキップ理由 | 次の走査で再評価 |
 | corrupt_audio | 失敗理由 | fingerprint変更または手動再試行 |
 | interrupted / io_failure | ジョブまたは項目 | 復旧後に再試行 |
@@ -174,13 +174,13 @@ erDiagram
 
 `inspect(read_seek, limits) -> InspectionResult`を用意する。結果は`Accepted(ValidatedAudio)`、`Deferred(reason)`、`Rejected(reason)`。ValidatedAudioはcodec情報、サンプル範囲、digest、許可メタデータ、画像候補、検証済み識別キーのみを含む。購入者タグの値を構造体へ持ち出さない。
 
-処理順：ファイル長とbox境界検査 → トラック・sample entry・保護構造 → AACのデコーダ設定とサンプル参照 → 購入由来情報 → タグと画像 → digest。box個数・ネスト深さ・タグサイズ・サンプル数に上限を設け、整数加算とoffsetのoverflow、範囲外参照を拒否する。初期値は深さ32、box数10万、タグ領域16 MiB、サンプル数100万。上限を超える入力はクラッシュせず理由を返す。
+処理順：ファイル長とbox境界検査 → トラック・sample entry → AACのデコーダ設定とサンプル参照 → 購入由来情報 → タグと画像 → digest。box個数・ネスト深さ・タグサイズ・サンプル数に上限を設け、整数加算とoffsetのoverflow、範囲外参照を拒否する。初期値は深さ32、box数10万、タグ領域16 MiB、サンプル数100万。上限を超える入力はクラッシュせず理由を返す。
 
-mp4ametaはタグ読み取り用。DRMなし・購入済み判定の代替にはしない。形式検証アダプターの実装候補ライブラリは未選定であり、既存Rustパーサーで必要な情報が得られるかを最初に検証する。コンテナの独自パーサーを無条件に作る方針にはしない。
+mp4ametaはタグ読み取り用。購入済み判定の代替にはしない。形式検証アダプターの実装候補ライブラリは未選定であり、既存Rustパーサーで必要な情報が得られるかを最初に検証する。コンテナの独自パーサーを無条件に作る方針にはしない。保護情報を網羅的に調査する専用判定は実装せず、未対応codecは通常の形式エラー、ブラウザで再生できない場合はplayerの再生エラーとして扱う。
 
 購入曲の判定規則とストアIDの取り出し方は実購入ファイルで確認するまで未確定。規則にはparser_versionを付け、更新時には判定不能だったsourceを再評価する。単なるAAC・ファイル名・アーティスト名は購入根拠にしない。正規購入曲を識別できない場合は要件の問題として戻し、すべてを除外したまま完成扱いにしない。
 
-検証：購入AAC、再ダウンロード版、タグ違い、保護構造、ALAC、CD AAC、途中・破損ファイル、壊れたbox長・sample offset。サンプルの構造検証は全AACフレームのデコード成功保証ではなく、再生エラーはplayerでも扱う。
+検証：購入AAC、同じファイルの別パスコピー、タグ違い、ALAC、CD AAC、途中・破損ファイル、壊れたbox長・sample offset。サンプルの構造検証は全AACフレームのデコード成功保証ではなく、再生エラーはplayerでも扱う。
 
 ## 8. storage / artwork — ファイル管理
 
@@ -443,7 +443,7 @@ cargo test -p rustune-domain -p rustune-contracts -p rustune-server
 | REQ-001 | 6–9 | 元不変・独立コピー・UI終了後継続 |
 | REQ-002 | 2、9、14 | 件数・理由・途中状態表示 |
 | REQ-003 | 8–10 | 各commit/rename境界停止・冪等復旧 |
-| REQ-004 | 3、5、7、9 | 別パス・再ダウンロード・ID衝突 |
+| REQ-004 | 3、5、7、9 | 再スキャン・同じファイルの別パスコピー・ID衝突 |
 | REQ-005 | 3、5、8、11 | メタデータ欠落・編集・再走査 |
 | REQ-006 | 11、14 | 部分一致・グループ・空状態 |
 | REQ-007 | 12、15 | Range・シーク・画面移動 |
@@ -451,7 +451,7 @@ cargo test -p rustune-domain -p rustune-contracts -p rustune-server
 | REQ-009 | 5、11、14 | revision・並べ替え・再起動 |
 | REQ-010 | 5、11 | 冪等更新・永続化 |
 | REQ-011 | 9–12、15 | 削除競合・lease解除・除外復元 |
-| REQ-012 | 6–9 | DRM・破損・形式・容量 |
+| REQ-012 | 6–9、14 | 破損・形式・容量・再生失敗表示 |
 | REQ-013 | 8、13 | 候補・低解像度・API失敗・既存保持 |
 | REQ-014 | 4、9 | 自動有効/無効・起動・安定待ち |
 | REQ-015 | 14、16 | Chromeインストール・title・navigation |
@@ -468,4 +468,4 @@ cargo test -p rustune-domain -p rustune-contracts -p rustune-server
 | NFR-009 | 14、15 | 3ブラウザ・2幅・キーボード |
 | NFR-010 | 2、6–8、13 | 許可DTO・ログ・外部通信に購入者値がないこと |
 
-未確定なのは購入曲の判定規則と形式検証ライブラリ、同一曲再ダウンロードの実データ確認、ManifestなしのChrome挙動、API画像の利用条件、本人向け音源内タグの扱い。設計書を詳細化してもこれらは実証済みにはならない。必要な実機検証は全体設計のTesting strategyを維持し、不成立なら該当設計・要件へ戻す。
+未確定なのは購入曲の判定規則と形式検証ライブラリ、ManifestなしのChrome挙動、API画像の利用条件、本人向け音源内タグの扱い。設計書を詳細化してもこれらは実証済みにはならない。必要な実機検証は全体設計のTesting strategyを維持し、不成立なら該当設計・要件へ戻す。

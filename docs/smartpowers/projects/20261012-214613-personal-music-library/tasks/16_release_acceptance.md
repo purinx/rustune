@@ -31,7 +31,7 @@ PRD Success measures、DESIGN_DOC Testing strategy、MODULE_DESIGN §17、design
 ## Implementation steps
 
 1. 購入10曲以上で取り込み・再起動・整理・再生・削除除外を通し確認する。
-2. コピー・commit・削除の障害、容量・権限・DRM・途中ファイルを検証する。
+2. コピー・commit・削除の障害、容量・権限・未対応形式・途中ファイル・再生失敗表示を検証する。
 3. 1万曲・取り込み有無の検索p95とAAC再生開始p95を固定条件で測る。
 4. 3実ブラウザ・2画面幅・キーボード・Chromeインストール・OS操作・ログイン起動を確認する。
 5. 全Must/NFRとShouldの結果・延期承認を記録する。必要な修正後に関連チェックを再実施し、全体合格後にPROJECTをCompletedへ更新する。

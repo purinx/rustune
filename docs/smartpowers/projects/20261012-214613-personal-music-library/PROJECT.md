@@ -5,12 +5,12 @@ Status: Active
 Created: 2026-10-12T21:46:13+09:00
 Slug: personal-music-library
 
-Last updated: 2026-10-16
-Phase: Planning
+Last updated: 2026-10-17
+Phase: Implementation
 
 ## 方針
 
-iTunes Storeで購入・ダウンロードしたDRMなしの`.m4a`ファイルを、ミュージックアプリのメディアフォルダからスキャンして個人ライブラリへコピーし、管理・再生する。DRM付き（`.m4p`、Apple Musicのサブスク曲）は対象外。iTunes Search APIはメタデータとジャケットの補完にのみ使う。個人利用のみ。バックエンドはRust、フロントエンドはRust/WASMを中心とする。
+iTunes Storeで購入・ダウンロードした、ブラウザで再生可能な`.m4a`（AAC）ファイルを、ミュージックアプリのメディアフォルダからスキャンして個人ライブラリへコピーし、管理・再生する。iTunes Search APIはメタデータとジャケットの補完にのみ使う。個人利用のみ。バックエンドはRust、フロントエンドはRust/WASMを中心とする。
 
 ## 現在の成果物と次のゲート
 
@@ -20,6 +20,10 @@ iTunes Storeで購入・ダウンロードしたDRMなしの`.m4a`ファイル�
 - MODULE_DESIGN.md: Approved（2026-10-16 by user）。モジュール境界、DTO、DB制約、取り込み・削除・復旧、WASM再生、CIの詳細設計。両設計のLGTMを受領。
 - 設計修正：ユーザーの賛同に基づきcoreをdomainへ改名。ドメイン型と不変条件はdomain、通信DTOはcontractsが所有する。
 - 実装タスク16件の粒度・依存順はユーザー合意済み（2026-10-16）。
-- tasks/PLAN.md: Draft。16件の個別タスクをPlannedで作成し、変更領域・手順・検証・受け入れ基準を具体化した。
-- 次のゲート：詳細実装計画のレビュー・承認。購入曲識別・Chrome挙動等の実機検証事項は先行タスクで検証する。
-- コード実装は未着手。承認済みPRDと設計書は変更していない。
+- tasks/PLAN.md: Approved（2026-10-16 by user）。実装開始指示を受領。
+- タスク01: Done。Rust 1.99.1・4クレートworkspace・CI・WASM最小画面・HTTP接続を実装。native/WASM Clippy、Rustテスト、Trunk release、独立Chromeの390px/1280px確認に合格。
+- 承認済み変更（2026-10-17 by user）：DRM専用判定と再取得音源の同一性保証・比較ゲートを削除。PRD・全体設計・詳細設計・タスク02/06/16・PLANへ同期した。同じファイルの別パスコピー・再スキャンの重複防止と専用保存先へのコピーは維持。
+- タスク02: In Progress。実音源1件の解析と端末内利用指示を受領済み。購入由来情報の規則、同じ音源の重複判定、採用パーサーと解析上限の方針を残作業とする。追加の実音源提供は必須としない。
+- タスク03: In Progress。合成AACと指定実音源のRange配信、Chrome headless再生・シーク・Media Session登録の自動確認は合格。Chromeインストール・Dock・実メディアキー・Safari/Firefoxの手動確認は未実施。
+- タスク04以降は02/03の検証ゲート完了待ち。成立性を確認せずにドメイン実装や製品取り込みへ進めない。
+- 承認済みPRDと設計書に従い、依存順で実装する。

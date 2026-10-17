@@ -31,7 +31,7 @@ crates/server/src/source/、inspection/、専用fixture・テスト
 ## Implementation steps
 
 1. descriptor相対・no-followの列挙とread-onlyハンドル、fingerprintを実装する。
-2. 02で選んだパーサーを境界内に実装し、AAC・保護構造・購入情報・サンプル範囲を検証する。
+2. 02で選んだパーサーを境界内に実装し、AAC・購入情報・サンプル範囲を検証する。
 3. 各解析上限、音声digest、許可メタデータ、parser_versionを実装する。
 4. Deferred/Rejectedの理由を契約codeへ変換し、購入者タグやOS生エラーを外へ出さない。
 
@@ -45,7 +45,7 @@ crates/server/src/source/、inspection/、専用fixture・テスト
 
 ## Acceptance criteria
 
-保護・破損・判定不能を理由付きで除外し、購入AACをValidatedAudioへ変換できる。
+未対応形式・破損・判定不能を理由付きで除外し、購入AACをValidatedAudioへ変換できる。
 
 ## Handoff notes
 
