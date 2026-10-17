@@ -1,6 +1,6 @@
 # 05: SQLite・設定・起動基盤
 
-Status: Planned
+Status: In Progress
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-005, REQ-009, REQ-010, REQ-011, NFR-005, NFR-008
 Depends on: 04

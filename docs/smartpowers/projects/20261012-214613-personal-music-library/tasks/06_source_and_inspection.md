@@ -1,6 +1,6 @@
 # 06: 安全な走査と音源解析
 
-Status: Planned
+Status: In Progress
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-004, REQ-005, REQ-012, NFR-006, NFR-010
 Depends on: 02, 04
