@@ -1,6 +1,6 @@
 # 03: Chromeインストール・再生・OS操作の検証
 
-Status: In Progress
+Status: Done
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-007, REQ-015, REQ-016
 Depends on: 01
@@ -48,6 +48,13 @@ experiments/browser/、専用検証ページ・サーバー、プロジェクト
 必須ブラウザ挙動が確認済みであり、未実施と不合格を区別した記録がある。
 
 ## Handoff notes
+
+### 2026-10-18 完了
+
+- Chromeのみを対象とする最新の受け入れ条件に基づきDoneとする。subagentの最終記録`2b2e4c6`をmainへ統合した。
+- HTTPテスト3件、合成/指定実音源の自動再生・シーク・Media Session回帰、Manifest解析・installability診断エラー0、Service Worker登録0を確認済み。rootの統合確認も成功済み。
+- 実機ではユーザーが追加・更新、Dock再表示、聴音・シーク継続、指定曲再生、背景メディアキー・コントロールセンター・外部リンクを確認した。
+- 08へ最小Manifest/アイコン/外部リンク、12へMedia Session操作を引き継ぐ。正式な製品プレイヤー・別曲キュー・OS表示の詳細は後続受け入れで確認する。詳細は`experiments/browser/VERIFICATION.md`。
 
 ### 実装・検証記録
 
