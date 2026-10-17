@@ -3,7 +3,7 @@
 Status: Planned
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-015, NFR-002, NFR-009
-Depends on: 03, 04
+Depends on: 03
 Parallel group: B
 
 ## Objective
@@ -47,6 +47,8 @@ crates/web/src/shell/、components/、共通CSS・静的アイコン・index.htm
 主要ナビゲーションがブラウザの戻るボタンなしで使え、狭幅でも再生操作領域が隠れない。
 
 ## Handoff notes
+
+- 2026-10-18の並列化指示に基づき、実APIや業務型を使用しないUI基盤は03の完了後に先行する。04への依存を外し、API接続・業務form・正式プレイヤーを範囲に加えない。
 
 - 前提タスクの成果と検証記録を確認してから着手する。未解決の設計変更は該当承認ゲートへ戻す。
 - 予定領域外の変更、共有Cargo設定・router・migrationへの変更が必要なら統合担当へ集約し、並行タスクの所有範囲を侵さない。

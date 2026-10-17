@@ -20,11 +20,11 @@ Module design: ../MODULE_DESIGN.md
 | 01 | [開発基盤とCI](01_workspace_foundations.md) | None | None | NFR-001, NFR-002 |
 | 02 | [購入音源の識別・重複防止の検証](02_audio_feasibility.md) | 01 | A | REQ-004, REQ-012, NFR-010 |
 | 03 | [Chromeインストール・再生・OS操作の検証](03_browser_feasibility.md) | 01 | A | REQ-007, REQ-015, REQ-016 |
-| 04 | [ドメインモデルとAPI DTO](04_domain_and_contracts.md) | 02 | A | REQ-004, REQ-005, REQ-008, NFR-001, NFR-002, NFR-010 |
+| 04 | [ドメインモデルとAPI DTO](04_domain_and_contracts.md) | 02 | B | REQ-004, REQ-005, REQ-008, NFR-001, NFR-002, NFR-010 |
 | 05 | [SQLite・設定・起動基盤](05_persistence_and_bootstrap.md) | 04 | B | REQ-005, REQ-009, REQ-010, REQ-011, NFR-005, NFR-008 |
 | 06 | [安全な走査と音源解析](06_source_and_inspection.md) | 02, 04 | B | REQ-004, REQ-005, REQ-012, NFR-006, NFR-010 |
 | 07 | [音源保存とジャケット処理](07_storage_and_artwork.md) | 04 | B | REQ-001, REQ-005, REQ-012, NFR-005, NFR-007 |
-| 08 | [デザイン準拠のUI基盤](08_ui_foundations.md) | 03, 04 | B | REQ-015, NFR-002, NFR-009 |
+| 08 | [デザイン準拠のUI基盤](08_ui_foundations.md) | 03 | B | REQ-015, NFR-002, NFR-009 |
 | 09 | [取り込みジョブ・自動走査・復旧](09_import_and_recovery.md) | 05, 06, 07 | None | REQ-001, REQ-002, REQ-003, REQ-004, REQ-012, REQ-014, NFR-003, NFR-005, NFR-006, NFR-007 |
 | 10 | [ライブラリ操作・削除・除外](10_library_management.md) | 09 | None | REQ-005, REQ-006, REQ-009, REQ-010, REQ-011, NFR-003, NFR-005 |
 | 11 | [API・音声配信・サーバー統合](11_http_and_media.md) | 10 | None | REQ-001, REQ-002, REQ-005, REQ-006, REQ-007, REQ-009, REQ-010, REQ-011, REQ-014, NFR-004, NFR-008, NFR-010 |
@@ -45,7 +45,7 @@ flowchart TD
     shared --> database["05 DB・設定"]
     shared --> source["06 走査・解析"]
     shared --> storage["07 保存・画像"]
-    shared --> ui["08 UI基盤"]
+    browserCheck --> ui["08 UI基盤"]
     database --> importing["09 取り込み・復旧"]
     source --> importing
     storage --> importing
@@ -66,15 +66,15 @@ flowchart TD
 
 | Group | Tasks | 所有分離 |
 | --- | --- | --- |
-| A | 02、03、04 | 02完了後、04のdomain/contractsを03のexperiments/browserと並行。コード所有を分離 |
-| B | 05、06、07、08 | db/config/bootstrap、source/inspection、storage/artwork、web共通部品を分離。domain/contracts変更は04へ集約 |
+| A | 02、03 | 音源とブラウザの先行検証を分離 |
+| B | 04、05、06、07、08 | 04は02、08は03の完了後に開始。05/06/07は04完了後。domain/contracts、db/config、source/inspection、storage/artwork、webの所有を分離 |
 | C | 14、15 | enrichmentと補完画面、配布・運用・ログ処理を分離。共通router/起動・Cargo変更は統合担当が順次反映 |
 
 Cargo.toml・Cargo.lock、共通router、migration番号、全体CSS・AppShellは同時編集しない。migrationは05を起点に後続タスクへ順次引き継ぐ。09・10はDB操作が重なるため直列。14の補完ルート登録と15の起動処理統合も共通entrypointの変更を直列化する。
 
 ## Integration checkpoints
 
-2026-10-18のユーザー指示により04を03から分離して並行開始する。04は02の結果を受け取り、03のChrome/他ブラウザ受け入れは08の開始条件に残す。05/06/07は04完了後に開始できる。08は03・04の両方を待つ。
+2026-10-18の並列化指示により04は02、08は03を前提に並行開始する。08はUI基盤だけを扱い、業務型・API接続を行わないため04を待たない。05/06/07は04完了後に開始する。同時実行枠を超える候補は、終了したsubagentの枠へ順次割り当てる。
 
 1. 01: native/WASMのビルド・Lint・最小起動が通る。
 2. 02/03: 購入由来情報、同じ音源の別パスコピー・タグ差分の重複判定、Chromeインストール・AAC・OS操作が実証される。不成立は設計へ戻し、未検証を完了としない。
