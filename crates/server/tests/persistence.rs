@@ -267,7 +267,7 @@ async fn unreadable_source_does_not_prevent_database_startup_and_storage_file_is
     let dir = tempfile::tempdir().unwrap();
     let source = dir.path().join("source");
     std::fs::create_dir(&source).unwrap();
-    std::fs::set_permissions(&source, std::fs::Permissions::from_mode(0)).unwrap();
+    std::fs::set_permissions(&source, std::fs::Permissions::from_mode(0o000)).unwrap();
     let status = config::inspect_source_root(&source);
     // rootユーザーはPOSIX権限を無視できるが、通常のデスクトップユーザーはできない。
     assert!(matches!(
