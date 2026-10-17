@@ -57,12 +57,26 @@ try {
   assert.equal(evidence.mediaSession,true); assert.equal(evidence.metadata,'合成テスト 1');
   assert.ok(evidence.events.includes('registered:nexttrack'));
   assert.ok(evidence.events.includes('registered:previoustrack'));
+  // 再生中に解除し、遅れて届くpauseイベントとタイマーが状態を戻さないことを確認する。
+  assert.equal(await page.evaluate(() => document.querySelector('audio').paused),false);
+  await page.evaluate(() => {
+    const session = navigator.mediaSession;
+    const original = session.setPositionState.bind(session);
+    window.__positionCalls = [];
+    session.setPositionState = (...args) => { window.__positionCalls.push(args.length === 0 ? 'clear' : 'set'); return original(...args); };
+  });
+  const pausesBeforeClear = await page.evaluate(() => (document.getElementById('events').textContent.match(/audio:pause/g) || []).length);
   await page.getByRole('button',{ name:'セッション解除', exact:true }).click();
   await page.waitForFunction(() => navigator.mediaSession.metadata === null && document.querySelector('audio').paused);
+  await page.waitForFunction(count => (document.getElementById('events').textContent.match(/audio:pause/g) || []).length > count, pausesBeforeClear);
+  await page.waitForTimeout(1200); // 500ms間隔のタイマーを2回以上経過させる
+  const cleared = await page.evaluate(() => ({ state:navigator.mediaSession.playbackState, positionCalls:window.__positionCalls }));
+  assert.equal(cleared.state,'none');
+  assert.deepEqual(cleared.positionCalls,['clear']);
   for (const width of [390,1280]) {
     await page.setViewportSize({ width,height:800 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),false);
   }
   assert.deepEqual(errors,[]); assert.ok(ranges.includes(206));
-  console.log(JSON.stringify({ chrome:await browser.version(), headless:true, syntheticAAC:!audioFile, localAudio:!!audioFile, duration, httpMediaResponses:ranges, manifestName:manifestData.name, installability, evidence, pageErrors:errors, nativeInstallAndOSControls:'NOT TESTED' },null,2));
+  console.log(JSON.stringify({ chrome:await browser.version(), headless:true, syntheticAAC:!audioFile, localAudio:!!audioFile, duration, httpMediaResponses:ranges, manifestName:manifestData.name, installability, evidence, cleared, pageErrors:errors, nativeInstallAndOSControls:'NOT TESTED' },null,2));
 } finally { await context?.close(); await new Promise(resolve => server.close(resolve)); await rm(profile,{ recursive:true,force:true }); }

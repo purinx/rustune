@@ -65,3 +65,11 @@ Chromeで必要なインストール・更新、Dockからの再表示、合成A
 OSの曲名・位置表示の細かな見え方とセッション解除後の残留表示は個別確認していない（JavaScriptの解除は自動検証済み）。正式PlayerController、別曲を使う正式キュー、製品のRust/WASMとの接続は後続タスクの対象。この検証の成功範囲を広げて解釈しない。
 
 ユーザーが引き続き聴音できるよう、指定実音源のloopback4317サーバーを維持している。タスク状態・要件文書の更新は統合担当が行う。
+
+## 2026-10-18 セッション解除後の状態巻き戻りを修正（PR #1レビュー指摘）
+
+再生中に「セッション解除」すると、`audio.pause()`が遅れて発行する`pause`イベントのリスナーが`playbackState`を`none`から`paused`へ戻し、500ms間隔のタイマーも位置情報を再発行していた。metadataがnullの間は両者を書き込まないようにし、解除時に`setPositionState()`を引数なしで呼んで位置情報を明示的に消去した。
+
+- `browser-check.mjs`を拡張し、再生中に解除したうえで遅延`pause`イベントの到着とタイマー2回分（1200ms）の経過を待ち、`playbackState`が`none`のままで、解除後の`setPositionState`呼び出しが消去の1回だけであることを確認する。
+- 合成AACで実行して成功（Chrome 155.0.8059.80 headless、HTTP 206、pageerrorなし）。修正前の`app.js`では`'paused' !== 'none'`で失敗することを確認した。実音源は使用していない。
+- `node --test experiments/browser/server.test.mjs`：3/3成功。

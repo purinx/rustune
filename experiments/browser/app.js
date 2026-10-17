@@ -21,7 +21,8 @@ const mapping = { play:'play', pause:'pause', previous:'previoustrack', next:'ne
 for (const [id, action] of Object.entries(mapping)) document.getElementById(id).onclick = () => dispatch(action);
 for (const event of ['loadedmetadata', 'playing', 'pause', 'seeked', 'ended', 'error']) audio.addEventListener(event, () => {
   log(`audio:${event}`);
-  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+  // セッション解除後に遅れて届くpause等で、playbackStateを'none'から戻さない。
+  if ('mediaSession' in navigator && navigator.mediaSession.metadata) navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
   if (event === 'ended') dispatch('nexttrack');
 });
 if ('mediaSession' in navigator) {
@@ -34,6 +35,8 @@ document.getElementById('clear').onclick = () => {
   audio.pause();
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none';
+    // 引数なしの呼び出しで位置情報を明示的に消去する。
+    try { navigator.mediaSession.setPositionState?.(); } catch (error) { log(`position:${error.name}`); }
     for (const action of ['play','pause','previoustrack','nexttrack','seekto']) {
       try { navigator.mediaSession.setActionHandler(action, null); } catch { /* unsupported action */ }
     }
@@ -42,7 +45,8 @@ document.getElementById('clear').onclick = () => {
 };
 setInterval(() => {
   document.getElementById('status').textContent = `曲 ${track} / ${audio.paused ? '停止' : '再生中'} / ${audio.currentTime.toFixed(1)}秒 / ${Number.isFinite(audio.duration) ? audio.duration.toFixed(1) : '?'}秒`;
-  if ('mediaSession' in navigator && navigator.mediaSession.setPositionState && Number.isFinite(audio.duration) && audio.duration > 0) {
+  // セッション解除後（metadataがnull）は位置情報を再発行しない。
+  if ('mediaSession' in navigator && navigator.mediaSession.metadata && navigator.mediaSession.setPositionState && Number.isFinite(audio.duration) && audio.duration > 0) {
     try { navigator.mediaSession.setPositionState({ duration:audio.duration, playbackRate:audio.playbackRate, position:Math.min(audio.currentTime,audio.duration) }); } catch (error) { log(`position:${error.name}`); }
   }
 }, 500);
