@@ -1,6 +1,6 @@
 # ブラウザ成立性検証
 
-製品とは独立したNode製の短命な検証ハーネス。正式なサーバー・プレイヤーはRustで実装する。Manifest、Service Worker、外部音源を使わない。既定のテスト音は小さな440Hzの音なので音量に注意する。明示指定した実音源による端末内の自動検証にも対応する。
+製品とは独立したNode製の短命な検証ハーネス。正式なサーバー・プレイヤーはRustで実装する。インストール用の最小Web App Manifestを使い、Service Worker・オフライン再生・外部音源は使わない。既定のテスト音は小さな440Hzの音なので音量に注意する。明示指定した実音源による端末内の自動検証にも対応する。
 
 ```sh
 node experiments/browser/generate-fixture.mjs
@@ -21,6 +21,10 @@ PLAYWRIGHT_PATH=/absolute/path/to/playwright/index.mjs node experiments/browser/
 
 `CHROME_PATH`でChrome実行ファイルを変更できる。自動テストは空きポートで専用サーバーを起動・終了する。Range対応とブラウザ再生の証拠を標準出力へ出す。OSメディアキー、インストール、Dock、通常ブラウザへの外部リンクの引き渡しは自動テストの合格に含めない。
 
+Manifestは`name/short_name: Rustune`、`id/start_url/scope: /`、`display: standalone`、背景・テーマはCSSの`--bg`と同じ`#121212`。自作の`icon.svg`からローカルChromeで192px/512px PNGを生成した。再生成は同じ`PLAYWRIGHT_PATH`を指定して`node experiments/browser/generate-icons.mjs`を実行する。HTTPテストはManifestの配信type・情報・CSS色との一致・PNG実寸を確認する。
+
+ブラウザ自動検証は一時的な通常プロファイルを作成・削除し、CDPの`Page.getAppManifest`と`Page.getInstallabilityErrors`がエラーなしであること、Service Worker登録がないことを確認する。これはインストール可能性の静的検査で、アドレスバーのinstallアイコン表示・実インストール成功を保証しない。表示にはブラウザ状態や利用状況・既存インストールも影響するため、実画面で別途確認する。
+
 手動確認用のChromeを開く場合は、下記を**明示的に**実行する。起動すると専用サーバーと新しい一時プロファイルのChromeだけを開く。個人プロファイル・ログイン・システム設定を変更しない。デフォルト4317ポートは`PORT`で変更可能。
 
 ```sh
@@ -40,6 +44,9 @@ sequenceDiagram
     participant Server as 専用Rangeサーバー
     participant Session as Media Session
     participant OS as macOS操作（手動）
+    participant Chrome as Chromeインストール判定
+    Chrome->>Server: GET manifest.webmanifest・192/512pxアイコン
+    Server-->>Chrome: Rustune・standalone・scope・起動URL
     UI->>Audio: 再生 / シーク
     Audio->>Server: GET /audio.m4a, Range
     Server-->>Audio: 206 audio/mp4
@@ -55,7 +62,7 @@ sequenceDiagram
 
 | 操作 | 期待する結果 | 現在の結果 |
 | --- | --- | --- |
-| Chromeでページを開きメニューからアプリとしてインストールする | Manifestなしで可能か、名称Rustune、アイコン、独立ウィンドウを確認する。メニュー名も記録 | 未実施 |
+| Chromeでページを開きinstallアイコンまたはメニューからアプリとしてインストールする | 最小Manifestで名称Rustune、アイコン、独立ウィンドウを確認する。使用した導線も記録 | 未実施 |
 | 起動アイコン・Dockから閉じた後に再表示 | 正しいページを表示し、名称が保たれる | 未実施 |
 | インストールしたウィンドウで外部リンクを開く | 通常ブラウザへ遷移し、プレイヤーウィンドウが置換されない | 未実施 |
 | 末尾moovの合成AACを再生、6秒へシーク | 音声が聞こえ、待機後に指定位置から再開 | 自動検証成功／聴音未実施 |
@@ -69,4 +76,4 @@ sequenceDiagram
 
 合成テスト1/2は同じ音源を使うダミーキューで、正式なキューや連続再生の保証ではない。Media Sessionハンドラー登録成功はOSが操作を配送する証明ではない。製品のRust/WASMとの接続、購入ファイル固有の形式差、サーバー停止・削除競合などは後続タスクで検証する。
 
-インストールやChromeの前後操作が成立しない場合、要件REQ-015/REQ-016と設計へ戻す。Manifestや別フレームワークを暗黙に追加しない。
+インストールやChromeの前後操作が成立しない場合、要件REQ-015/REQ-016と設計へ戻す。2026-10-18のユーザー承認で最小Manifestを採用した。Service Worker・オフライン・別フレームワークは暗黙に追加しない。

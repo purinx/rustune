@@ -30,3 +30,30 @@ test('HTTP full body, partial bytes, HEAD and 416 contracts', async () => {
     assert.equal(multi.status,200); assert.deepEqual(Buffer.from(await multi.arrayBuffer()),bytes);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
+
+test('manifest metadata, palette tokens and real PNG sizes are served', async () => {
+  const server = makeServer();
+  await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
+  try {
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const response = await fetch(`${origin}/manifest.webmanifest`);
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('content-type'),'application/manifest+json');
+    const manifest = await response.json();
+    for (const field of ['name','short_name']) assert.equal(manifest[field],'Rustune');
+    for (const field of ['id','start_url','scope']) assert.equal(manifest[field],'/');
+    assert.equal(manifest.display,'standalone');
+    const css = await (await fetch(`${origin}/style.css`)).text();
+    const background = /--bg:(#[0-9a-f]{6})/.exec(css)[1];
+    assert.equal(manifest.background_color,background);
+    assert.equal(manifest.theme_color,background);
+    assert.deepEqual(manifest.icons.map(icon => icon.sizes),['192x192','512x512']);
+    for (const icon of manifest.icons) {
+      const response = await fetch(origin + icon.src);
+      assert.equal(response.status,200); assert.equal(response.headers.get('content-type'),'image/png');
+      const bytes = Buffer.from(await response.arrayBuffer()), size = Number(icon.sizes.split('x')[0]);
+      assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+      assert.equal(bytes.readUInt32BE(16),size); assert.equal(bytes.readUInt32BE(20),size);
+    }
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
