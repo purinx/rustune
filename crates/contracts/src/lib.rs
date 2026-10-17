@@ -56,8 +56,10 @@ pub fn validate_number(value: u16) -> Result<(), InvalidInput> {
     }
 }
 
+/// 一覧取得のページ指定。省略したフィールドは`Default`（offset 0・limit 50）で補い、
+/// 明示した値は`validate`で検証する。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct Pagination {
     pub offset: u64,
     pub limit: u16,
@@ -71,10 +73,13 @@ impl Default for Pagination {
     }
 }
 impl Pagination {
+    /// 受け付けるoffsetの上限（MODULE_DESIGN.md §11）。
+    pub const MAX_OFFSET: u64 = 1_000_000;
+    /// limitの上限（MODULE_DESIGN.md §11）。
+    pub const MAX_LIMIT: u16 = 100;
+
     pub fn validate(self) -> Result<Self, InvalidInput> {
-        if (1..=100).contains(&self.limit)
-            && self.offset.checked_add(u64::from(self.limit)).is_some()
-        {
+        if (1..=Self::MAX_LIMIT).contains(&self.limit) && self.offset <= Self::MAX_OFFSET {
             Ok(self)
         } else {
             Err(InvalidInput)
