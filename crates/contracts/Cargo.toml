@@ -7,6 +7,10 @@ publish.workspace = true
 
 [dependencies]
 serde.workspace = true
+uuid = { version = "1", default-features = false, features = ["std", "serde"] }
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true
