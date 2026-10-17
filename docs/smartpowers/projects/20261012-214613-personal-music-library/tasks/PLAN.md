@@ -41,7 +41,6 @@ flowchart TD
     foundation["01 開発基盤"] --> audioCheck["02 音源検証"]
     foundation --> browserCheck["03 ブラウザ検証"]
     audioCheck --> shared["04 domain・DTO"]
-    browserCheck --> ui
     shared --> database["05 DB・設定"]
     shared --> source["06 走査・解析"]
     shared --> storage["07 保存・画像"]

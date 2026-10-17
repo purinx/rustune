@@ -1,6 +1,6 @@
 # 08: デザイン準拠のUI基盤
 
-Status: Planned
+Status: In Progress
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-015, NFR-002, NFR-009
 Depends on: 03
