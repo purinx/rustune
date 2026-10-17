@@ -23,6 +23,7 @@ sha2 = "0.10"
 mp4-track = "=0.1.0"
 mp4ameta = "=0.13.0"
 mp4-atom = "=0.15.0"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 
 [dev-dependencies]
 serde_json.workspace = true
