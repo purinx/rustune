@@ -40,7 +40,7 @@ pub fn ErrorNotice(message: String) -> impl IntoView {
     view! { <p class="error-notice" role="alert">{message}</p> }
 }
 
-/// Native modal owns Escape handling, inert background, focus containment and restoration.
+/// Escape処理・背景のinert化・フォーカスの閉じ込めと復帰はnativeのmodalに任せる。
 #[component]
 pub fn Dialog(open: RwSignal<bool>, title: &'static str, children: Children) -> impl IntoView {
     let dialog = NodeRef::<html::Dialog>::new();

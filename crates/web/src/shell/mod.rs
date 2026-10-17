@@ -29,7 +29,10 @@ fn Shell() -> impl IntoView {
         let title = page_title();
         document().set_title(&format!("{title} — Rustune"));
         if let Some(element) = heading.get() {
-            let _ = element.focus();
+            // 埋め込み表示（UIギャラリーのiframe）で親ページをスクロールさせない。
+            let options = web_sys::FocusOptions::new();
+            options.set_prevent_scroll(true);
+            let _ = element.focus_with_options(&options);
         }
     });
     view! {

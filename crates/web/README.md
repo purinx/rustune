@@ -22,6 +22,16 @@ flowchart TD
 
 Manifestと自作192px/512pxアイコンはタスク03の検証済み資産を再利用。Trunkのcopy-fileでURLを固定し、Service Workerは追加しない。`manifest.webmanifest`の配信MIMEは本番サーバー側でも `application/manifest+json` を確認する。外部リンクは信頼した固定URLに限定し `target="_blank" rel="noopener noreferrer"` を使用する。インストール後のOS挙動はタスク03のChrome実機検証に依存する。
 
+## UIギャラリー（開発専用）
+
+Storybookの代わりに、共通部品とトークンを一覧できる`/gallery`を用意している。`crates/web`で`trunk serve`を実行し、`http://127.0.0.1:8080/gallery`を開く。
+
+- 配色・タイポグラフィ・角丸・影：共有CSSトークンの見本
+- 共通部品：Button、リンク、再生コントロール、ナビゲーション項目、TextField、ErrorNotice、Dialog、EmptyStateを状態ごとに表示
+- 画面プレビュー：各routeを390px（実寸）と1280px（50%縮小）のiframeで並べて表示
+
+`src/gallery.rs`は`debug_assertions`有効時だけコンパイルされるため、`trunk build --release`の成果物には含まれない。部品を追加・変更したら、ギャラリーにも見本を追加する。
+
 検証コマンド（リポジトリルートから）:
 
 ```sh
