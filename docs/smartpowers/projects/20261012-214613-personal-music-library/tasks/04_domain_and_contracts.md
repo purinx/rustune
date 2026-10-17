@@ -3,8 +3,8 @@
 Status: Planned
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-004, REQ-005, REQ-008, NFR-001, NFR-002, NFR-010
-Depends on: 02, 03
-Parallel group: None
+Depends on: 02
+Parallel group: A
 
 ## Objective
 
@@ -48,6 +48,8 @@ crates/domain/src/、crates/contracts/src/、両crateのテスト
 設計した不正状態を生成・遷移で拒否し、DTOの往復とnative/WASMビルドが通る。
 
 ## Handoff notes
+
+- 2026-10-18 by user：「task 04もsubagentで進めて」により03と並行して開始する。02の音源・識別結果を前提とし、ブラウザ非依存のdomain/contractsは03の手動受け入れを待たない。03は08の依存として維持する。
 
 - 前提タスクの成果と検証記録を確認してから着手する。未解決の設計変更は該当承認ゲートへ戻す。
 - 予定領域外の変更、共有Cargo設定・router・migrationへの変更が必要なら統合担当へ集約し、並行タスクの所有範囲を侵さない。
