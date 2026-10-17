@@ -1,6 +1,6 @@
 # 04: ドメインモデルとAPI DTO
 
-Status: In Progress
+Status: Done
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-004, REQ-005, REQ-008, NFR-001, NFR-002, NFR-010
 Depends on: 02
@@ -48,6 +48,12 @@ crates/domain/src/、crates/contracts/src/、両crateのテスト
 設計した不正状態を生成・遷移で拒否し、DTOの往復とnative/WASMビルドが通る。
 
 ## Handoff notes
+
+### 2026-10-18 完了
+
+- subagent成果`cd4cb16`をmainへ統合。domainの型・不変条件・識別衝突・メタデータ優先・状態遷移・キュー、contractsのDTO・PATCH3状態・公開エラー・入力検証を実装した。変換境界は両crate READMEへ記録。
+- 統合後にdomain7件・contracts6件・既存server2件のテスト成功。native Clippy、domain/contractsのwasm32 check、全体rustfmtに成功。subagentはWASM Clippyも成功。
+- HTTP・SQL・ブラウザ・実音源の処理は含めない。05/06/07は公開型を参照でき、08は引き続き独立したUI基盤として進める。
 
 - 2026-10-18 by user：「task 04もsubagentで進めて」により03と並行して開始する。02の音源・識別結果を前提とし、ブラウザ非依存のdomain/contractsは03の手動受け入れを待たない。03は08の依存として維持する。
 

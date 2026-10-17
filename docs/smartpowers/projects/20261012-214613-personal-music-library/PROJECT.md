@@ -27,5 +27,5 @@ iTunes Storeで購入・ダウンロードした、ブラウザで再生可能�
 - 承認済み変更（2026-10-18 by user）：インストール用の最小Web App Manifestを導入する。Service Worker・オフライン再生は対象外のまま。PRD・設計・タスク03/08・PLANへ反映。
 - 承認済み変更（2026-10-18 by user）：Safari/Firefoxの検証を削除し、初期版の対応・受け入れ対象をMacのChromeに限定する。
 - タスク03: Done。ChromeのManifest診断・自動回帰と、ユーザー実機での追加/更新・Dock再表示・指定曲聴音・シーク・背景メディアキー/コントロールセンター・外部リンクに成功。成果を08/12へ引き継ぐ。
-- タスク04はsubagentで実装中。2026-10-18の並列化指示により08は03完了を前提に先行し、04完了後に05/06/07を順次subagentへ割り当てる。
+- タスク04: Done。domain/contractsの実装を統合し、native15テスト・Clippy・WASM check・rustfmtに成功。08は独立して実装中。05/06/07を同時実行枠に合わせ順次subagentへ割り当てる。
 - 承認済みPRDと設計書に従い、依存順で実装する。
