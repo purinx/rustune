@@ -2,7 +2,7 @@
 
 Status: Approved
 Approved: 2026-10-16 by user
-Last updated: 2026-10-17
+Last updated: 2026-10-18
 Project: 20261012-214613-personal-music-library
 PRD: ./PRD.md
 Parent design: ./DESIGN_DOC.md
@@ -378,7 +378,7 @@ SyncServiceは取り込み中2秒・通常15秒で/stateを取得し、revision�
 
 ルート：`/library`、`/albums/:key`、`/artists/:key`、`/playlists/:id`、`/favorites`、`/imports`、`/settings`、`/exclusions`。全画面で共通navigationと再生バーを維持する。空ライブラリから取り込み設定・スキャンへ進める。リンク・ボタン・dialogのフォーカス移動を定義し、並べ替えはdragだけでなく上下ボタンも提供する。
 
-document.titleは再生中なら「曲名 — Rustune」、それ以外は「画面名 — Rustune」。外部リンクは検証済みURLを通常ブラウザへ開く挙動をChrome実機で確認する。インストール名・アイコンはHTML headの固定情報を使い、Manifestは追加しない。
+document.titleは再生中なら「曲名 — Rustune」、それ以外は「画面名 — Rustune」。外部リンクは検証済みURLを通常ブラウザへ開く挙動をChrome実機で確認する。インストール名・アイコン・起動先は`manifest.webmanifest`で固定し、HTML headから参照する。name/short_nameはRustune、id/start_url/scopeは`/`、displayはstandalone、192px/512pxの自作アイコンと共有色トークンを用いる。Manifestは`application/manifest+json`で配信し、Trunkの静的資産へ含める。Service Worker・オフライン機能は追加しない。Manifest診断とインストールUIの確認を分ける。
 
 検証：古い検索応答、編集途中の同期、切断・復帰、ウィンドウ狭幅、全画面のキーボード操作。
 
@@ -468,4 +468,4 @@ cargo test -p rustune-domain -p rustune-contracts -p rustune-server
 | NFR-009 | 14、15 | 3ブラウザ・2幅・キーボード |
 | NFR-010 | 2、6–8、13 | 許可DTO・ログ・外部通信に購入者値がないこと |
 
-未確定なのは購入曲の判定規則と形式検証ライブラリ、ManifestなしのChrome挙動、API画像の利用条件、本人向け音源内タグの扱い。設計書を詳細化してもこれらは実証済みにはならない。必要な実機検証は全体設計のTesting strategyを維持し、不成立なら該当設計・要件へ戻す。
+未確定なのは形式検証の製品適用、Manifestを付けたChromeの実機挙動、API画像の利用条件、本人向け音源内タグの扱い。購入由来規則とパーサー候補はタスク02の結果を参照する。設計書を詳細化しても実機挙動は実証済みにはならない。必要な実機検証は全体設計のTesting strategyを維持し、不成立なら該当設計・要件へ戻す。

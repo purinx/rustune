@@ -33,7 +33,7 @@ crates/web/src/shell/、components/、共通CSS・静的アイコン・index.htm
 1. design.mdを読み、配色・タイポグラフィ・角丸・余白・影をCSSトークンにまとめる。
 2. Rustuneロゴ、sidebar、狭幅navigation、固定再生バー領域、routerを作る。
 3. ボタン・入力・dialog・空状態・エラー表示とフォーカスの共通部品を作る。
-4. 03の成果を使い、title・アイコン・外部リンクを設定する。PlayerControllerは12が所有する。
+4. 03の成果を使い、title・最小Web App Manifest・192px/512pxアイコン・外部リンクを設定し、Trunk成果物に含める。Service Workerは追加しない。PlayerControllerは12が所有する。
 
 ## Verification
 

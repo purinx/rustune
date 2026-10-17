@@ -2,7 +2,7 @@
 
 Status: Approved
 Approved: 2026-10-16 by user
-Last updated: 2026-10-17
+Last updated: 2026-10-18
 Project: 20261012-214613-personal-music-library
 Design: ../DESIGN_DOC.md
 Module design: ../MODULE_DESIGN.md
@@ -88,7 +88,7 @@ Cargo.toml・Cargo.lock、共通router、migration番号、全体CSS・AppShell�
 - 購入曲の判定規則・検証パーサーは02で確定する。失敗した場合の要件緩和を事前に仮定しない。
 - 14の画像は低解像度を許容するが用途条件の確認は残る。不成立ならShould延期・変更を明示する。
 - 本人向け再生音源の購入者タグは承認済み設計どおり保持し、管理DTO・画面・ログ・外部送信から除外する。
-- ChromeのManifestなし挙動が不成立なら、黙ってPWAやネイティブ構成へ変更しない。
+- 2026-10-18のユーザー指示により最小Manifestを03で検証し08で製品UIへ適用する。Service Worker・オフライン機能・ネイティブ構成は追加しない。
 - サーバー停止時のバックアップと復元にはLaunchAgentの再起動抑止も含める。元Musicライブラリを復元作業の対象にしない。
 - 完了予定日や所要日数は現段階で見積もらず、先行検証の結果に応じて残作業を調整する。
 

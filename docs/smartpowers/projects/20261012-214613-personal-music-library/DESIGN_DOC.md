@@ -2,7 +2,7 @@
 
 Status: Approved
 Approved: 2026-10-16 by user
-Last updated: 2026-10-17
+Last updated: 2026-10-18
 Project: 20261012-214613-personal-music-library
 PRD: ./PRD.md
 
@@ -202,7 +202,7 @@ JSONログにrequest ID、job ID、track ID、相対パス、処理時間、理�
 実装の最初に以下の検証を置く。現時点では文書調査のみであり、実機・実ファイルでの確認は未実施。
 
 1. 指定された購入済みAAC、同じ音源の別パスコピー、タグ差分、CD由来AAC、ALAC、破損・途中ファイルで形式・購入由来情報と重複を検証する。個人情報・購入音源はGitへ追加しない。CIでは合成した非機密fixtureを使い、実音源での結果は匿名化して記録する。
-2. Manifest・Service Workerなしの最小ページをMacのChromeでインストールし、名前、アイコン、Dock、独立ウィンドウ、外部リンク、再起動後の起動URLを確認。title変更によるインストール名への影響も調べる。
+2. 最小Manifest付きの検証ページをMacのChromeでインストールし、インストール診断、アドレスバーのアイコン、名前、Dock、独立ウィンドウ、外部リンク、再起動後のURLを確認する。Service Workerは登録しない。title変更とインストール名を分離する。
 3. AACのRange配信・シーク、末尾moov、Media Session・メディアキー・背景ウィンドウ操作を実機で確認する。
 4. REQ-013は返された解像度の画像で補完・表示し、画像欠落時に既存情報を保持することを検証する。利用条件も確認し、満たせない場合はShould延期または要件修正を明示的にレビューする。
 
@@ -214,9 +214,11 @@ macOSの実Chrome・Firefox・Safariで日本語検索、主要操作、1280px/3
 
 ## Deployment and rollout
 
-Trunkで生成した静的資産をRustサーバーと同じリリースディレクトリに配置し、同一originで配信する。SPAの画面URLはindex.htmlへfallbackし、API・mediaの404にはfallbackしない。indexは再検証、ハッシュ付き資産は長期cacheとする。Service Worker、Manifest、Tauriは追加しない。
+Trunkで生成した静的資産をRustサーバーと同じリリースディレクトリに配置し、同一originで配信する。SPAの画面URLはindex.htmlへfallbackし、API・media・Manifest・アイコンの404にはfallbackしない。indexとManifestは再検証、ハッシュ付き資産は長期cacheとする。Service Worker、オフライン動作、Tauriは追加しない。
 
-`<title>Rustune</title>`、faviconと高解像度アイコンを用意し、アプリ内ナビゲーションを完結させる。インストール後の画面タイトルは曲名または画面名。外部リンクには`target=_blank`と`rel=noopener noreferrer`を使うが、通常ブラウザへ開く挙動はChrome実機ゲートで確認する。Googleは「Install page as app」の手順を案内しているが、本PRDの全挙動を保証する資料ではない。[Chrome web apps](https://support.google.com/chrome/answer/9658361?co=genie.platform%3DDesktop&hl=en)
+`<title>Rustune</title>`、favicon、192px/512pxの自作アイコン、`manifest.webmanifest`を用意する。Manifestは`name/short_name: Rustune`、`id/start_url/scope: /`、`display: standalone`、共有トークンのtheme/background colorを持ち、HTML headから参照する。取り込み元・購入者情報を含めない。Chromeの診断に加え、未インストールの実ブラウザでアイコン表示とインストールを確認する。既存インストールや利用履歴による表示差は記録する。[Chrome install criteria](https://web.dev/articles/install-criteria)
+
+アプリ内ナビゲーションを完結させ、インストール後の画面タイトルは曲名または画面名とする。外部リンクには`target=_blank`と`rel=noopener noreferrer`を使い、通常ブラウザへ開く挙動をChrome実機で確認する。
 
 ユーザーLaunchAgentを`~/Library/LaunchAgents/`へ配置する手順を用意する。ProgramArgumentsはバイナリ・設定の絶対パス、RunAtLoadを有効、異常終了時のKeepAliveと再起動間隔を設定する。root daemonにはしない。bootstrap/bootoutによる有効化・解除、手動起動での権限確認、ログ確認を手順化する。サーバー停止直後にChromeを開くとエラーページになる可能性があるため、health確認と再読み込みの復旧手順を記載する。[Apple launchd guide](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
 
@@ -260,7 +262,7 @@ Trunkで生成した静的資産をRustサーバーと同じリリースディ�
 - 定期走査は数秒以内の反映より信頼性を優先する。1万ファイルの走査が再生へ影響する場合は差分管理を改善し、必要に応じて監視を補助として加える。
 - 元音源の独立コピーで保存容量が増える。取り込み中は一時領域の分も空き容量を確保する。
 - 購入由来情報は指定実音源で確認し、重複判定は同じファイル・同じ音声サンプルの範囲で検証する。
-- ManifestなしのChromeインストールはブラウザ依存。ゲート不合格ならPRDの対応範囲を再レビューし、黙ってPWA化しない。
+- Chromeのアイコン表示はブラウザ状態にも依存する。Manifest診断と実機操作を分けて確認し、Service Workerやオフライン機能を暗黙に追加しない。
 - REQ-013の低解像度画像はユーザー承認済みの妥協点。利用条件は別途確認し、Shouldであっても検証前に完了としない。
 
 ## Open questions
