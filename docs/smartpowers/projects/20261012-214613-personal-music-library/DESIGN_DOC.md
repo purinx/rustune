@@ -121,7 +121,7 @@ SQLiteはWAL、foreign_keys有効、busy timeout、短い書き込みトラン�
 
 HTMLAudioElementのイベントを状態の正とし、play()の拒否、error、ended、durationchangeを処理する。ユーザー操作後に再生し、Macログインやページ表示だけでは自動再生しない。PRDの「再起動後に手動操作なし」はサーバー起動作業が不要という解釈であり、再生ボタン操作は必要。音声全体をWASMメモリへロードしない。
 
-Media Sessionに曲情報と同一originのジャケットを設定し、play/pause/previoustrack/nexttrack/seektoをPlayerStoreと接続する。UIとOSから同じ操作関数を呼び出す。MacのChromeをOS操作の必須検証対象とし、通常画面の再生はSafari・Firefoxでも確認する。[Chrome Media Session](https://developer.chrome.com/blog/media-session?hl=en)
+Media Sessionに曲情報と同一originのジャケットを設定し、play/pause/previoustrack/nexttrack/seektoをPlayerStoreと接続する。UIとOSから同じ操作関数を呼び出す。MacのChromeを通常画面の再生・OS操作の検証対象とする。[Chrome Media Session](https://developer.chrome.com/blog/media-session?hl=en)
 
 キューはブラウザウィンドウ単位で管理し、曲削除のrevision検知時に参照を除去する。複数ウィンドウ間の再生同期やキュー永続化は初期版の保証に含めない。
 
@@ -208,7 +208,7 @@ JSONログにrequest ID、job ID、track ID、相対パス、処理時間、理�
 
 純粋ロジックの単体テスト、tempdir + SQLiteによる取り込み統合テスト、HTTP API・Rangeの結合テスト、ブラウザE2Eを分ける。障害注入はコピー・rename・DB commit・削除の各境界、元ファイル変更、root外リンク、権限、容量不足を対象にする。
 
-macOSの実Chrome・Firefox・Safariで日本語検索、主要操作、1280px/390px、キーボード操作を確認する。Playwright WebKitだけをSafariの実機確認の代わりにしない。OS操作とChromeインストールは手動受け入れ手順を残す。
+macOSの実Chromeで日本語検索、主要操作、1280px/390px、キーボード操作を確認する。OS操作とChromeインストールは手動受け入れ手順を残す。他ブラウザの検証は初期版の対象外。
 
 性能は4 CPU相当・8 GB・SSDのMac、1万曲の管理データ、同時1ユーザー、取り込み有無で測定する。ウォームアップ後に固定検索100回と再生開始30回のp95を記録し、検索1秒・再生2秒を満たす。使用Mac、OS、ブラウザ、音源サイズ、計測条件を記録する。性能用データは合成可能だが再生は実ファイルでも確認する。
 
@@ -253,7 +253,7 @@ Trunkで生成した静的資産をRustサーバーと同じリリースディ�
 | NFR-006 | Security and privacy | root外リンク・差し替え・元ファイルハッシュ不変 |
 | NFR-007 | Critical flows 3; iTunes metadata enrichment | 上限値・容量下限・レート制限の境界テスト |
 | NFR-008 | System context; Security and privacy | loopback bind・Host/Origin検証・運用手順 |
-| NFR-009 | Architecture and component boundaries; Testing strategy | 3ブラウザ・2画面幅・キーボード操作 |
+| NFR-009 | Architecture and component boundaries; Testing strategy | MacのChrome・2画面幅・キーボード操作 |
 | NFR-010 | Security and privacy; Observability and operations | 個人情報fixtureのJSON・ログ非露出。音源内タグの扱いは設計解釈を要レビュー |
 
 ## Risks and tradeoffs

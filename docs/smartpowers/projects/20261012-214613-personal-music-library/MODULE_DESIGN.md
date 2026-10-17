@@ -419,7 +419,7 @@ flowchart LR
     audio -->|"HTTP Range"| mediaApi["Rustune media API"]
 ```
 
-検証：ページ移動、素早い曲変更、play拒否、load中pause、末尾終了、現在曲削除、メディアキー、背景ウィンドウ、Safari/Firefoxの通常操作。
+検証（MacのChrome）：ページ移動、素早い曲変更、play拒否、load中pause、末尾終了、現在曲削除、メディアキー、背景ウィンドウ。
 
 ## 16. 運用・品質チェック
 
@@ -465,7 +465,7 @@ cargo test -p rustune-domain -p rustune-contracts -p rustune-server
 | NFR-006 | 6、8 | root境界・差し替え・内容不変 |
 | NFR-007 | 4、7–9、13 | 各制限・画像・レート境界 |
 | NFR-008 | 4、12、16 | loopback・Origin・運用手順 |
-| NFR-009 | 14、15 | 3ブラウザ・2幅・キーボード |
+| NFR-009 | 14、15 | MacのChrome・2幅・キーボード |
 | NFR-010 | 2、6–8、13 | 許可DTO・ログ・外部通信に購入者値がないこと |
 
 未確定なのは形式検証の製品適用、Manifestを付けたChromeの実機挙動、API画像の利用条件、本人向け音源内タグの扱い。購入由来規則とパーサー候補はタスク02の結果を参照する。設計書を詳細化しても実機挙動は実証済みにはならない。必要な実機検証は全体設計のTesting strategyを維持し、不成立なら該当設計・要件へ戻す。

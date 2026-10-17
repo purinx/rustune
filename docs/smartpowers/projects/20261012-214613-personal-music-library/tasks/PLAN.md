@@ -96,4 +96,6 @@ Cargo.toml・Cargo.lock、共通router、migration番号、全体CSS・AppShell�
 
 ## Review status
 
+2026-10-18のユーザー指示により初期版の対応・受け入れブラウザをMacのChromeに限定する。03/13/16からSafari/Firefoxの確認を外す。
+
 タスク構成・依存順・詳細計画は承認済み。タスク01から依存順に実装する。OS起動設定の有効化は運用タスクの手順に従う。

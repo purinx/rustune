@@ -1,6 +1,6 @@
 # 04: ドメインモデルとAPI DTO
 
-Status: Planned
+Status: In Progress
 Project: 20261012-214613-personal-music-library
 Requirements: REQ-004, REQ-005, REQ-008, NFR-001, NFR-002, NFR-010
 Depends on: 02
