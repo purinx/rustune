@@ -1,4 +1,6 @@
 //! Minimal loopback HTTP application. Library services follow the feasibility gates.
+pub mod inspection;
+pub mod source;
 
 use std::path::Path;
 
