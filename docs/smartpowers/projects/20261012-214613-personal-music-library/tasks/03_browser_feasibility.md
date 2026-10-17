@@ -53,6 +53,7 @@ experiments/browser/、専用検証ページ・サーバー、プロジェクト
 
 - 2026-10-18 by user：最小Manifestの追加を承認。アドレスバーからのインストール導線を検証する。以下のManifestなしの結果は変更前の記録であり、新条件の合格とは扱わない。
 - subagentの検証ハーネス`44163c6`をmainへ統合済み。HTTPテスト2件、Chrome合成AAC回帰とroot rustfmtに成功。ユーザーは検証ページを開けたが、インストール成功はまだ未確認。
+- 最小Manifest追加`f236d6c`もmainへ統合。HTTP3件、Chrome 155.0.8059.80の合成AAC再生・シーク・Media Session回帰成功。CDPのManifest解析エラー・インストール診断エラーとも0、Service Worker登録0。subagentは指定実音源の回帰も成功。rootはmainでHTTP・合成AAC・診断を再確認。ユーザーへ同じURLの再読み込みとインストール操作を依頼中。実アイコン表示・OS操作はまだ未確認。
 
 - 2026-10-17: `RUSTUNE_TEST_AUDIO`で端末内の指定ファイルを読み取り専用で使用する自動検証を追加。CIでは指定を拒否し、ブラウザからの通信を同一loopback originに限定。実音源はコピー・コミットしない。
 - 指定実音源をChrome 155.0.8059.40 headlessで検証し、再生開始、6秒シーク完了後の再生継続、一時停止、Media Session登録・解除に成功。duration約249.64秒、音源応答206、pageerrorなし。ダミーキューの前後操作も成功。聴音・全曲デコード・実OS操作の保証にはしない。
