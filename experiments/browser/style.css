@@ -1,5 +1,76 @@
-:root { color-scheme: dark; --bg:#121212; --surface:#181818; --interactive:#1f1f1f; --text:#fff; --muted:#b3b3b3; --accent:#1ed760; --error:#f3727f; --space:16px; --radius:8px; --pill:9999px; --body:16px; --caption:14px; --title:24px; }
-* { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:var(--body) "Helvetica Neue",Helvetica,Arial,"Hiragino Sans",Meiryo,sans-serif; }
-main { max-width:900px; margin:auto; padding:var(--space); } h1 { font-size:var(--title); } p { color:var(--muted); } section { display:flex; flex-wrap:wrap; gap:8px; }
-button { border:0; border-radius:var(--pill); padding:12px 16px; background:var(--interactive); color:var(--text); font-size:var(--caption); font-weight:700; cursor:pointer; } #play { background:var(--accent); color:var(--bg); }
-:focus-visible { outline:3px solid var(--accent); outline-offset:3px; } pre { white-space:pre-wrap; overflow-wrap:anywhere; background:var(--surface); padding:var(--space); border-radius:var(--radius); font-size:var(--caption); } a { color:var(--text); }
+:root {
+  color-scheme: dark;
+  --bg: #121212;
+  --surface: #181818;
+  --interactive: #1f1f1f;
+  --text: #fff;
+  --muted: #b3b3b3;
+  --accent: #1ed760;
+  --error: #f3727f;
+  --space: 16px;
+  --radius: 8px;
+  --pill: 9999px;
+  --body: 16px;
+  --caption: 14px;
+  --title: 24px;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    var(--body) "Helvetica Neue",
+    Helvetica,
+    Arial,
+    "Hiragino Sans",
+    Meiryo,
+    sans-serif;
+}
+main {
+  max-width: 900px;
+  margin: auto;
+  padding: var(--space);
+}
+h1 {
+  font-size: var(--title);
+}
+p {
+  color: var(--muted);
+}
+section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+button {
+  border: 0;
+  border-radius: var(--pill);
+  padding: 12px 16px;
+  background: var(--interactive);
+  color: var(--text);
+  font-size: var(--caption);
+  font-weight: 700;
+  cursor: pointer;
+}
+#play {
+  background: var(--accent);
+  color: var(--bg);
+}
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--surface);
+  padding: var(--space);
+  border-radius: var(--radius);
+  font-size: var(--caption);
+}
+a {
+  color: var(--text);
+}
