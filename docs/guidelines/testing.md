@@ -28,6 +28,7 @@
 
 ```sh
 cargo fmt --all -- --check
+mise run fmt-check   # rustfmtに加え、CSS・mjsをoxfmtで確認
 cargo clippy --locked -p rustune-domain -p rustune-contracts -p rustune-server --all-targets -- -D warnings
 cargo clippy --locked -p rustune-web --target wasm32-unknown-unknown -- -D warnings
 cargo test --locked -p rustune-domain -p rustune-contracts -p rustune-server

@@ -1,6 +1,10 @@
 # 開発用のタスク。`mise run <タスク名>`で実行する。一覧は`mise tasks`。
 # Rustのツールチェーンは rust-toolchain.toml で固定しているので、ここでは指定しない。
 
+[tools]
+# CSS・mjsのフォーマッター（OXC製、Rust実装）。CIでも同じバージョンを使う（.github/workflows/ci.yml）。
+"npm:oxfmt" = "0.74.0"
+
 [env]
 # rustupの既定のインストール先。シェルのPATHに無くても、タスクから cargo・trunk を使えるようにする。
 _.path = ["{{env.HOME}}/.cargo/bin"]
@@ -9,3 +13,11 @@ _.path = ["{{env.HOME}}/.cargo/bin"]
 description = "UIギャラリー（crates/stories）を http://127.0.0.1:8081/gallery で配信する"
 dir = "crates/stories"
 run = "trunk serve"
+
+[tasks.fmt]
+description = "Rust（rustfmt）とCSS・mjs（oxfmt）を整形する"
+run = ["cargo fmt --all", "oxfmt '**/*.css' '**/*.mjs'"]
+
+[tasks.fmt-check]
+description = "整形済みかを確認する（ファイルは変更しない）"
+run = ["cargo fmt --all -- --check", "oxfmt --check '**/*.css' '**/*.mjs'"]
