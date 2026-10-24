@@ -1,5 +1,8 @@
 //! Minimal loopback HTTP application. Library services follow the feasibility gates.
 
+pub mod artwork;
+pub mod storage;
+
 use std::path::Path;
 
 use axum::{Json, Router, http::StatusCode, routing::get};
