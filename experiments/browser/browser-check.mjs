@@ -81,7 +81,11 @@ try {
   await page.waitForTimeout(1200); // 500ms間隔のタイマーを2回以上経過させる
   const cleared = await page.evaluate(() => ({ state:navigator.mediaSession.playbackState, positionCalls:window.__positionCalls }));
   assert.equal(cleared.state,'none');
-  assert.deepEqual(cleared.positionCalls,['clear']);
+  // 記録開始から解除のクリックまでにも500msタイマーは動き得るので、解除前の'set'は許容する。
+  // 確認するのは、解除（'clear'）が呼ばれ、それ以降に位置情報が再発行されないこと。
+  const firstClear = cleared.positionCalls.indexOf('clear');
+  assert.ok(firstClear >= 0, `setPositionState()が呼ばれていない: ${cleared.positionCalls}`);
+  assert.deepEqual(cleared.positionCalls.slice(firstClear).filter(call => call === 'set'),[]);
   assert.equal(await page.evaluate(() => ['play','pause','previoustrack','nexttrack','seekto'].every(action => window.__handlers[action] === null)),true);
   // 解除後に再生すると、ハンドラーが再登録されOSの前後操作がdispatchへ届くこと。
   await page.getByRole('button',{ name:'再生', exact:true }).click();

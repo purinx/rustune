@@ -41,12 +41,28 @@ fn Shell() -> impl IntoView {
 
 /// 画面が変わったことを伝える：ウィンドウタイトルを「<見出し> — Rustune」にし、h1へフォーカスを移す。
 /// スクリーンリーダーは、フォーカスが移ったh1を読み上げる。
+///
+/// 埋め込み表示（UIギャラリーのiframe）では、iframeの中にフォーカスがあるときだけh1へ移す。
+/// そうしないと、iframeが読み込まれるたびに、親ページで操作中のボタンからフォーカスを奪ってしまう。
 fn announce_page(title: &str, heading: NodeRef<html::H1>) {
     document().set_title(&format!("{title} — Rustune"));
+    if is_embedded() && !document().has_focus().unwrap_or(false) {
+        return;
+    }
     if let Some(element) = heading.get() {
         // 埋め込み表示（UIギャラリーのiframe）で親ページをスクロールさせない。
         let options = web_sys::FocusOptions::new();
         options.set_prevent_scroll(true);
         let _ = element.focus_with_options(&options);
     }
+}
+
+/// このページがiframeなどに埋め込まれて表示されているか。最上位のウィンドウ（`top`）が自分でなければ埋め込み。
+fn is_embedded() -> bool {
+    let current = window();
+    current
+        .top()
+        .ok()
+        .flatten()
+        .is_some_and(|top| top != current)
 }
