@@ -41,7 +41,12 @@ bind先、0以外のport、データ保存先、Web資産、ログフィルタ�
 できる最も深い祖先を`canonicalize`し、残りの成分を後ろに足してから構成要素単位で比較する。
 これにより、途中の祖先が存在しない・読めない場合でもシンボリックリンク別名を保ったまま
 比較できる（例：`/alias -> /data`、`/data/private`が読めない、取り込み元
-`/alias/private/music`・保存先`/data`は重なりと判定する）。結果は次の3種類。
+`/alias/private/music`・保存先`/data`は重なりと判定する）。`canonicalize`はリンク先が
+未作成のsymlinkにも`NotFound`を返すため、そのようなリンクは`symlink_metadata`と`read_link`で
+リンク先を自分でたどってから比較する（例：`alias -> data`でdataが未作成、取り込み元
+`alias/media`・保存先`data`は、保存先を作る前に重なりと判定する）。相対リンクの`..`は、
+その時点までを実パスへ解決してから戻る。40回を超えてリンクをたどる（循環する）場合は
+`ConfigError::Io`とする。結果は次の3種類。
 
 - `Separate`：最後まで解決でき、包含関係がない。
 - `Overlapping`：解決後のパスで一方が他方を含む。読めない部分を含む場合も安全側で重なりとする。
@@ -56,9 +61,12 @@ bind先、0以外のport、データ保存先、Web資産、ログフィルタ�
 報告し、起動失敗にはしない。実際の取り込み時のno-followなdescriptorアクセスと、識別・
 包含関係の再検証はタスク06が担う。
 
-`bootstrap(config, initial_source)`は非公開の保存先を作成し、コンテキストが生きている
+`bootstrap(config, initial_source)`は、保存先に既存DBがあれば、まず
+`db::settings::stored_source_path`で保存済みの取り込み元を読み取り専用で取り出し、保存先との
+重なりを確かめる（DBの作成・migrationはしない）。重なっていれば、取り込み元の配下へ何も
+書き込まずに起動を止める。その後、非公開の保存先を作成し、コンテキストが生きている
 間は非ブロッキングのadvisoryプロセスロックを保持してから、DBを開いてmigrationし、
-永続化された設定を読み込む。ロックファイルは意図的に削除しない。クラッシュ後でも
+永続化された設定を読み込む。開いたDBの取り込み元でも、もう一度重なりを確かめる。ロックファイルは意図的に削除しない。クラッシュ後でも
 OSがロックを解放するため、残ったファイルは無害である。この関数はMusicのファイル、
 LaunchAgent、ネットワークlistener、ワーカーを作成しない。`ready()`は、タスク09が
 実際のrecovery後に`mark_recovered()`を呼ぶまでfalseのままとなる。アプリケーションの
@@ -80,6 +88,8 @@ sequenceDiagram
     participant Recovery as タスク09のrecovery
     Main->>Config: load_config(text, home)
     Main->>Boot: bootstrap(config, initial_source)
+    Boot->>Repo: 既存DBから保存済み取り込み元を読み取り専用で取得
+    Boot->>Boot: 保存先との重なりを確認（重なれば何も書かずに停止）
     Boot->>Boot: 非公開保存先の準備 + 排他ロック
     Boot->>Repo: WAL pool + migration + 永続設定の読み込み
     Boot-->>Main: コンテキスト、ready=false、取り込み元の状態

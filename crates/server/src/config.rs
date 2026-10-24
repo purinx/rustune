@@ -120,41 +120,112 @@ struct ResolvedPath {
 }
 /// 比較の前に存在する祖先を実パスへ解決する。取り込み元ディレクトリが未作成でも、
 /// 途中の祖先が読めなくても、解決できる祖先までのシンボリックリンク別名を保つ。
+/// リンク先が未作成のsymlinkも、リンク先のパスへ置き換えて比較する（[`LinkResolver`]）。
 fn resolve_deepest_ancestor(path: &Path) -> Result<ResolvedPath, ConfigError> {
-    let clean = absolute_clean(path)?;
-    let mut ancestor = clean.as_path();
-    let mut tail = Vec::new();
-    let mut unverified_tail = false;
-    loop {
-        match std::fs::canonicalize(ancestor) {
-            Ok(mut resolved) => {
-                for part in tail.iter().rev() {
-                    resolved.push(part);
-                }
-                return Ok(ResolvedPath {
-                    path: resolved,
-                    unverified_tail,
-                });
-            }
-            Err(e) => {
-                match e.kind() {
-                    // 存在しない成分は別名になり得ないため、確定した残り成分として扱う。
-                    std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory => {}
+    let mut resolver = LinkResolver::default();
+    let path = resolver.resolve(&absolute_clean(path)?)?;
+    Ok(ResolvedPath {
+        path,
+        unverified_tail: resolver.unverified,
+    })
+}
+
+/// symlinkのたどりすぎ（循環リンク）とみなす回数。Linuxのカーネルの上限（40）に合わせる。
+const MAX_LINK_FOLLOWS: usize = 40;
+
+/// パスを実パスへ解決する。`canonicalize`は、リンク先が未作成のsymlinkにも`NotFound`を返すため、
+/// そのままでは未解決の別名を「別の場所」と誤判定する。そこで`symlink_metadata`と`read_link`で
+/// 未作成のリンク先を自分でたどる。
+#[derive(Default)]
+struct LinkResolver {
+    /// これまでにたどったsymlinkの数。
+    follows: usize,
+    /// 権限不足で解決できなかった成分があった（[`ResolvedPath::unverified_tail`]）。
+    unverified: bool,
+}
+impl LinkResolver {
+    /// 解決できる最も深い祖先を実パスへ解決し、残りの成分を後ろに足したパスを返す。
+    fn resolve(&mut self, path: &Path) -> Result<PathBuf, ConfigError> {
+        let mut ancestor = path.to_path_buf();
+        let mut tail = Vec::new();
+        loop {
+            match std::fs::canonicalize(&ancestor) {
+                Ok(resolved) => return Ok(push_tail(resolved, &tail)),
+                Err(e) => match e.kind() {
+                    std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory => {
+                        // リンク先が未作成のsymlinkなら、リンク先を解決して残りの成分を足す。
+                        if let Some(target) = self.dangling_link_target(&ancestor)? {
+                            let resolved = self.resolve(&target)?;
+                            return Ok(push_tail(resolved, &tail));
+                        }
+                        // 存在しない成分は別名になり得ないため、確定した残り成分として扱う。
+                    }
                     // 読めない祖先より下は実体を確認できない。HTTPは止めず、状態は
                     // inspect_source_rootで別途報告する。取り込み元はここでは開かない。
-                    std::io::ErrorKind::PermissionDenied => unverified_tail = true,
+                    std::io::ErrorKind::PermissionDenied => self.unverified = true,
                     _ => return Err(ConfigError::Io),
-                }
-                tail.push(
-                    ancestor
-                        .file_name()
-                        .ok_or(ConfigError::InvalidPath)?
-                        .to_os_string(),
-                );
-                ancestor = ancestor.parent().ok_or(ConfigError::InvalidPath)?;
+                },
             }
+            tail.push(
+                ancestor
+                    .file_name()
+                    .ok_or(ConfigError::InvalidPath)?
+                    .to_os_string(),
+            );
+            ancestor = ancestor
+                .parent()
+                .ok_or(ConfigError::InvalidPath)?
+                .to_path_buf();
         }
     }
+
+    /// `link`がsymlinkなら、そのリンク先の絶対パスを返す。symlinkでなければ`None`。
+    /// 相対リンクは、リンクを置いたディレクトリ（を実パスへ解決したもの）を基準にする。
+    fn dangling_link_target(&mut self, link: &Path) -> Result<Option<PathBuf>, ConfigError> {
+        let Ok(meta) = std::fs::symlink_metadata(link) else {
+            return Ok(None);
+        };
+        if !meta.file_type().is_symlink() {
+            return Ok(None);
+        }
+        self.follows += 1;
+        if self.follows > MAX_LINK_FOLLOWS {
+            return Err(ConfigError::Io);
+        }
+        let target = std::fs::read_link(link).map_err(|_| ConfigError::Io)?;
+        let base = if target.is_absolute() {
+            PathBuf::from("/")
+        } else {
+            self.resolve(link.parent().ok_or(ConfigError::InvalidPath)?)?
+        };
+        self.join(base, &target).map(Some)
+    }
+
+    /// `base`に`target`の成分を順に足す。`..`は、その時点までを実パスへ解決してから1つ戻る。
+    /// 文字列の上で`..`を畳むと、途中のsymlinkを無視した誤ったパスになるため。
+    fn join(&mut self, base: PathBuf, target: &Path) -> Result<PathBuf, ConfigError> {
+        let mut path = base;
+        for component in target.components() {
+            match component {
+                Component::RootDir | Component::Prefix(_) => path = PathBuf::from("/"),
+                Component::CurDir => {}
+                Component::Normal(part) => path.push(part),
+                Component::ParentDir => {
+                    path = self.resolve(&path)?;
+                    path.pop();
+                }
+            }
+        }
+        Ok(path)
+    }
+}
+
+/// 解決済みのパスに、解決できなかった残りの成分（逆順に積んだもの）を足す。
+fn push_tail(mut path: PathBuf, tail: &[std::ffi::OsString]) -> PathBuf {
+    for part in tail.iter().rev() {
+        path.push(part);
+    }
+    path
 }
 /// 取り込み元と保存先の位置関係。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

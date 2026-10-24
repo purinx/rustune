@@ -94,3 +94,10 @@ crates/server/src/db/、config.rs、bootstrap.rs、migrations/、関連統合テ
 - web_dist：明示指定・既定値とも`absolute_clean`で検証。既定値はDESIGN_DOCのリリース配置に合わせ`<実行ファイルのディレクトリ>/web`（絶対パス）。開発時はTOMLで絶対パスを明示する（`crates/server/src/db/README.md`に記載）。
 - 追加試験：`web_dist_must_be_absolute_and_defaults_next_to_the_binary`、`overlap_through_alias_is_detected_even_below_unreadable_directory`、`unverifiable_source_is_not_confirmed_separate_but_startup_continues`。
 - 検証：CI相当4コマンドすべて合格（persistence 15件合格・補助2件ignored）。persistence試験10回連続合格。
+
+### 追記：PR #2 再レビュー指摘への対応（2026-10-25）
+
+- 既存DBの保存済み取り込み元を、保存先の準備とmigrationより前に読み取り専用で取り出し（`db::settings::stored_source_path`）、重なっていれば取り込み元の配下へ書き込まずに起動を止める。
+- `config::root_relation`：リンク先が未作成のsymlinkを`symlink_metadata`・`read_link`でたどって比較する（`LinkResolver`）。相対リンクの`..`は実パスへ解決してから戻り、循環は`ConfigError::Io`。
+- テスト追加：`stored_source_overlap_is_rejected_before_storage_is_prepared`、`overlap_through_symlink_to_missing_target_is_detected`。
+- 検証：fmt（rustfmt・oxfmt）、native Clippy（警告をエラー扱い）、native テスト（server persistence 17件成功・2件はサブプロセス用でignored）。

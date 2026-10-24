@@ -309,6 +309,93 @@ fn overlap_through_alias_is_detected_even_below_unreadable_directory() {
     std::fs::set_permissions(&private, std::fs::Permissions::from_mode(0o700)).unwrap();
 }
 
+#[test]
+fn overlap_through_symlink_to_missing_target_is_detected() {
+    let dir = tempfile::tempdir().unwrap();
+    let data = dir.path().join("data");
+    // 指摘の例：alias -> data（dataは未作成）、取り込み元alias/media、保存先data。
+    let alias = dir.path().join("alias");
+    std::os::unix::fs::symlink("data", &alias).unwrap();
+    let source = alias.join("media");
+    assert_eq!(
+        config::root_relation(&source, &data),
+        Ok(config::RootRelation::Overlapping)
+    );
+    assert_eq!(
+        config::validate_separate_roots(&source, &data),
+        Err(ConfigError::OverlappingRoots)
+    );
+    assert_eq!(
+        config::reject_overlapping_roots(&source, &data),
+        Err(ConfigError::OverlappingRoots)
+    );
+    // 絶対パスのリンクと、`..`を含む相対リンクも同じ。
+    let absolute = dir.path().join("absolute");
+    std::os::unix::fs::symlink(&data, &absolute).unwrap();
+    assert_eq!(
+        config::root_relation(&absolute.join("media"), &data),
+        Ok(config::RootRelation::Overlapping)
+    );
+    let nested = dir.path().join("nested");
+    std::fs::create_dir(&nested).unwrap();
+    std::os::unix::fs::symlink("../data", nested.join("up")).unwrap();
+    assert_eq!(
+        config::root_relation(&nested.join("up/media"), &data),
+        Ok(config::RootRelation::Overlapping)
+    );
+    // 別の未作成の場所を指すリンクは重ならない。
+    let elsewhere = dir.path().join("elsewhere");
+    std::os::unix::fs::symlink("other", &elsewhere).unwrap();
+    assert_eq!(
+        config::root_relation(&elsewhere.join("media"), &data),
+        Ok(config::RootRelation::Separate)
+    );
+    // 循環するリンクは解決できないものとして拒否する。
+    std::os::unix::fs::symlink("loop-b", dir.path().join("loop-a")).unwrap();
+    std::os::unix::fs::symlink("loop-a", dir.path().join("loop-b")).unwrap();
+    assert_eq!(
+        config::root_relation(&dir.path().join("loop-a/media"), &data),
+        Err(ConfigError::Io)
+    );
+    // 判定だけで、リンク先のディレクトリを作らない。
+    assert!(!data.exists());
+}
+
+#[tokio::test]
+async fn stored_source_overlap_is_rejected_before_storage_is_prepared() {
+    use std::os::unix::{ffi::OsStrExt, fs::PermissionsExt};
+    let dir = tempfile::tempdir().unwrap();
+    // 指摘の例：DBを保存済み取り込み元の配下へ移し、data_dirをそこへ変更した。
+    let stored_source = dir.path().join("music");
+    let data = stored_source.join("rustune-data");
+    std::fs::create_dir_all(&data).unwrap();
+    let repo = Repository::open(&data.join("library.sqlite3"))
+        .await
+        .unwrap();
+    let settings = LibrarySettings::defaults(
+        Uuid::new_v4(),
+        stored_source.as_os_str().as_bytes().to_vec(),
+        "Music".into(),
+    );
+    repo.initialize_settings(&settings).await.unwrap();
+    repo.close().await;
+    std::fs::set_permissions(&data, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let config =
+        config::load_config(&format!("data_dir = '{}'", data.display()), dir.path()).unwrap();
+    // 起動時に渡す取り込み元（初回用の既定値）は、保存先と重ならない別の場所。
+    let initial_source = dir.path().join("other");
+    assert!(matches!(
+        bootstrap::bootstrap(config, &initial_source).await,
+        Err(BootstrapError::Config(ConfigError::OverlappingRoots))
+    ));
+    // 保存先の準備（サブディレクトリ作成・ロック・権限変更）を行う前に止まっている。
+    for name in ["media", "artwork", "staging", "rustune.lock"] {
+        assert!(!data.join(name).exists(), "{name}");
+    }
+    let mode = std::fs::metadata(&data).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o755);
+}
+
 #[tokio::test]
 async fn unverifiable_source_is_not_confirmed_separate_but_startup_continues() {
     use std::os::unix::fs::PermissionsExt;

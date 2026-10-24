@@ -2,7 +2,10 @@
 //! DBの作成に成功しただけではライブラリのready状態とはみなさない。
 use crate::{
     config::{self, ConfigError, RuntimeConfig, SourceStatus},
-    db::{DbError, Repository, settings::LibrarySettings},
+    db::{
+        DbError, Repository,
+        settings::{LibrarySettings, stored_source_path},
+    },
 };
 use std::{
     fs::File,
@@ -98,9 +101,15 @@ pub async fn bootstrap(
     initial_source: &Path,
 ) -> Result<BootstrapContext, BootstrapError> {
     config::reject_overlapping_roots(initial_source, &config.data_dir)?;
+    let db_path = config.data_dir.join("library.sqlite3");
+    // 既存DBがあれば、保存先の準備（ディレクトリ作成・権限変更）とmigrationより前に、
+    // 保存済みの取り込み元との重なりを確かめる。重なっていたら、取り込み元の配下へ何も書き込まずに止める。
+    if let Some(stored) = stored_source_path(&db_path).await? {
+        config::reject_overlapping_roots(&path_from_bytes(stored), &config.data_dir)?;
+    }
     prepare_storage(&config.data_dir)?;
     let lock = ProcessLock::acquire(&config.data_dir)?;
-    let repository = Repository::open(&config.data_dir.join("library.sqlite3")).await?;
+    let repository = Repository::open(&db_path).await?;
     let defaults =
         LibrarySettings::defaults(Uuid::new_v4(), path_bytes(initial_source), "Music".into());
     if let Err(error) = repository.initialize_settings(&defaults).await {
@@ -114,6 +123,7 @@ pub async fn bootstrap(
             return Err(error.into());
         }
     };
+    // ロック取得前に読んだ値から変わっていても安全なよう、開いたDBの値でもう一度確かめる。
     let source = path_from_bytes(stored.source_path_bytes);
     if let Err(error) = config::reject_overlapping_roots(&source, &config.data_dir) {
         repository.close().await;

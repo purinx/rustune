@@ -1,6 +1,48 @@
 use super::{DbError, Repository, bump_library, revision};
-use sqlx::Row;
+use sqlx::{ConnectOptions, Row, sqlite::SqliteConnectOptions};
+use std::path::Path;
 use uuid::Uuid;
+
+/// 既存DBに保存された取り込み元のパス（OSのバイト列）を、読み取り専用で取り出す。
+///
+/// 起動時に、保存先の準備（ディレクトリ作成・権限変更）とmigrationを行う前に、
+/// 保存済みの取り込み元と保存先が重なっていないかを確かめるために使う（`bootstrap`）。
+/// DBの作成・migration・設定の書き込みはしない。DBファイルが無いとき、
+/// またはmigration前で設定テーブルが無いときは`None`を返す。
+///
+/// WALモードのDBを読み取り専用で開くとき、SQLiteは`-wal`・`-shm`ファイルが無ければ
+/// DBと同じディレクトリに作ることがある。DBファイル自体がすでにそこにあるので、
+/// 新しい場所へ書き込むことにはならない。
+pub async fn stored_source_path(db_path: &Path) -> Result<Option<Vec<u8>>, DbError> {
+    // 有無を調べられない場合（data_dirがファイルなど）も「既存DBなし」とし、
+    // 保存先の問題としてbootstrapの`prepare_storage`に報告させる。
+    if !db_path.try_exists().unwrap_or(false) {
+        return Ok(None);
+    }
+    let mut connection = SqliteConnectOptions::new()
+        .filename(db_path)
+        .read_only(true)
+        .connect()
+        .await?;
+    let result = read_stored_source_path(&mut connection).await;
+    let _ = sqlx::Connection::close(connection).await;
+    result
+}
+async fn read_stored_source_path(
+    connection: &mut sqlx::SqliteConnection,
+) -> Result<Option<Vec<u8>>, DbError> {
+    let has_settings: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings')",
+    )
+    .fetch_one(&mut *connection)
+    .await?;
+    if !has_settings {
+        return Ok(None);
+    }
+    Ok(sqlx::query_scalar("SELECT r.absolute_path_bytes FROM settings s JOIN source_roots r ON r.id=s.source_root_id WHERE s.singleton=1")
+        .fetch_optional(&mut *connection)
+        .await?)
+}
 
 /// サーバー内部の設定。パスは表示用の非可逆文字列ではなくOSのバイト列で保持する。
 #[derive(Clone, Debug, PartialEq, Eq)]
