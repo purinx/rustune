@@ -1,9 +1,21 @@
 const audio = document.querySelector('#audio');
 const events = document.querySelector('#events');
 let track = 1;
+const ACTIONS = ['play','pause','previoustrack','nexttrack','seekto'];
+let handlersRegistered = false;
 const log = (message) => { events.textContent = `${message}\n${events.textContent}`.slice(0, 6000); };
+// セッション解除でハンドラーを外すため、再生を再開するたびに未登録なら登録し直す。
+function registerHandlers() {
+  if (handlersRegistered || !('mediaSession' in navigator)) return;
+  for (const action of ACTIONS) {
+    try { navigator.mediaSession.setActionHandler(action, details => dispatch(action, details)); log(`registered:${action}`); }
+    catch { log(`unsupported:${action}`); }
+  }
+  handlersRegistered = true;
+}
 function metadata() {
   document.title = `合成テスト ${track} — Rustune`;
+  registerHandlers();
   if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: `合成テスト ${track}`, artist: 'Rustune', album: 'ブラウザ成立性検証', artwork: [{ src: '/icon.svg', sizes: '192x192', type: 'image/svg+xml' }] });
 }
 async function dispatch(action, details = {}) {
@@ -25,21 +37,17 @@ for (const event of ['loadedmetadata', 'playing', 'pause', 'seeked', 'ended', 'e
   if ('mediaSession' in navigator && navigator.mediaSession.metadata) navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
   if (event === 'ended') dispatch('nexttrack');
 });
-if ('mediaSession' in navigator) {
-  for (const action of ['play','pause','previoustrack','nexttrack','seekto']) {
-    try { navigator.mediaSession.setActionHandler(action, details => dispatch(action, details)); log(`registered:${action}`); }
-    catch { log(`unsupported:${action}`); }
-  }
-}
+registerHandlers();
 document.getElementById('clear').onclick = () => {
   audio.pause();
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none';
     // 引数なしの呼び出しで位置情報を明示的に消去する。
     try { navigator.mediaSession.setPositionState?.(); } catch (error) { log(`position:${error.name}`); }
-    for (const action of ['play','pause','previoustrack','nexttrack','seekto']) {
+    for (const action of ACTIONS) {
       try { navigator.mediaSession.setActionHandler(action, null); } catch { /* unsupported action */ }
     }
+    handlersRegistered = false;
   }
   log('session:cleared');
 };

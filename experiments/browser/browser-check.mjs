@@ -64,6 +64,10 @@ try {
     const original = session.setPositionState.bind(session);
     window.__positionCalls = [];
     session.setPositionState = (...args) => { window.__positionCalls.push(args.length === 0 ? 'clear' : 'set'); return original(...args); };
+    // OS操作の代わりに、登録中のハンドラーを直接呼べるよう記録する。
+    const originalSetHandler = session.setActionHandler.bind(session);
+    window.__handlers = {};
+    session.setActionHandler = (action, handler) => { window.__handlers[action] = handler; return originalSetHandler(action, handler); };
   });
   const pausesBeforeClear = await page.evaluate(() => (document.getElementById('events').textContent.match(/audio:pause/g) || []).length);
   await page.getByRole('button',{ name:'セッション解除', exact:true }).click();
@@ -73,10 +77,27 @@ try {
   const cleared = await page.evaluate(() => ({ state:navigator.mediaSession.playbackState, positionCalls:window.__positionCalls }));
   assert.equal(cleared.state,'none');
   assert.deepEqual(cleared.positionCalls,['clear']);
+  assert.equal(await page.evaluate(() => ['play','pause','previoustrack','nexttrack','seekto'].every(action => window.__handlers[action] === null)),true);
+  // 解除後に再生すると、ハンドラーが再登録されOSの前後操作がdispatchへ届くこと。
+  await page.getByRole('button',{ name:'再生', exact:true }).click();
+  // playbackStateは非同期のplayingイベントで更新されるため、到着を待つ。
+  await page.waitForFunction(() => !document.querySelector('audio').paused && navigator.mediaSession.metadata !== null && navigator.mediaSession.playbackState === 'playing');
+  const reactivated = await page.evaluate(() => ({
+    handlers:['play','pause','previoustrack','nexttrack','seekto'].filter(action => typeof window.__handlers[action] === 'function'),
+    state:navigator.mediaSession.playbackState,
+  }));
+  assert.deepEqual(reactivated.handlers,['play','pause','previoustrack','nexttrack','seekto']);
+  assert.equal(reactivated.state,'playing');
+  await page.evaluate(() => window.__handlers.nexttrack({ action:'nexttrack' }));
+  await page.waitForFunction(() => document.title === '合成テスト 2 — Rustune' && navigator.mediaSession.metadata?.title === '合成テスト 2');
+  await page.evaluate(() => window.__handlers.previoustrack({ action:'previoustrack' }));
+  await page.waitForFunction(() => document.title === '合成テスト 1 — Rustune' && navigator.mediaSession.metadata?.title === '合成テスト 1');
+  await page.evaluate(() => window.__handlers.pause({ action:'pause' }));
+  await page.waitForFunction(() => document.querySelector('audio').paused && navigator.mediaSession.playbackState === 'paused');
   for (const width of [390,1280]) {
     await page.setViewportSize({ width,height:800 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),false);
   }
   assert.deepEqual(errors,[]); assert.ok(ranges.includes(206));
-  console.log(JSON.stringify({ chrome:await browser.version(), headless:true, syntheticAAC:!audioFile, localAudio:!!audioFile, duration, httpMediaResponses:ranges, manifestName:manifestData.name, installability, evidence, cleared, pageErrors:errors, nativeInstallAndOSControls:'NOT TESTED' },null,2));
+  console.log(JSON.stringify({ chrome:await browser.version(), headless:true, syntheticAAC:!audioFile, localAudio:!!audioFile, duration, httpMediaResponses:ranges, manifestName:manifestData.name, installability, evidence, cleared, reactivated, pageErrors:errors, nativeInstallAndOSControls:'NOT TESTED' },null,2));
 } finally { await context?.close(); await new Promise(resolve => server.close(resolve)); await rm(profile,{ recursive:true,force:true }); }

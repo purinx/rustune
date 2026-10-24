@@ -73,3 +73,11 @@ OSの曲名・位置表示の細かな見え方とセッション解除後の残
 - `browser-check.mjs`を拡張し、再生中に解除したうえで遅延`pause`イベントの到着とタイマー2回分（1200ms）の経過を待ち、`playbackState`が`none`のままで、解除後の`setPositionState`呼び出しが消去の1回だけであることを確認する。
 - 合成AACで実行して成功（Chrome 155.0.8059.80 headless、HTTP 206、pageerrorなし）。修正前の`app.js`では`'paused' !== 'none'`で失敗することを確認した。実音源は使用していない。
 - `node --test experiments/browser/server.test.mjs`：3/3成功。
+
+## 2026-10-24 セッション解除後の再生でハンドラーを再登録（PR #2レビュー指摘）
+
+Media Sessionのアクションハンドラーはページ読み込み時にしか登録していなかった。そのため「セッション解除」のあとに「再生」すると、音声とmetadataは戻るのにハンドラーは外れたままで、OSの前後・停止操作がページを再読み込みするまで`dispatch`へ届かなかった。登録処理を`registerHandlers()`にまとめ、未登録の場合は再生開始時（`metadata()`）に登録し直すようにした。
+
+- `browser-check.mjs`を拡張した。`setActionHandler`を記録用にラップし、解除直後に5つのハンドラーがすべてnullであることを確認する。続けて「再生」したあと、5つが再登録されて`playbackState`が`playing`になることを確認する。さらに登録済みのnexttrack・previoustrack・pauseハンドラーを直接呼び、曲の切り替え（タイトルとmetadata）と一時停止が反映されることを確認する。OSのメディアキーからの配送そのものは自動テストの対象外。
+- 合成AACを使ってheadless Chrome 155.0.8059.80で実行し、3回連続で成功した（pageerrorなし）。修正前の`app.js`では、再登録されたハンドラーが`[]`になり失敗することも確認した。実音源は使用していない。
+- `node --test experiments/browser/server.test.mjs`：3/3成功。
