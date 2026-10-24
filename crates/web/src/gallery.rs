@@ -1,5 +1,20 @@
-//! `trunk serve`の`/gallery`で表示する開発専用のUIギャラリー。
-//! `debug_assertions`有効時のみコンパイルされ、releaseビルドには含まれない。
+//! `trunk serve`の`/gallery`で表示する、開発専用のUIギャラリー（Storybookの代わり）。
+//!
+//! # 責務
+//! - 共有CSSトークン（配色・文字・角丸・影）の見本を並べ、`design.md`との整合を目で確認できるようにする。
+//! - 共通部品（[`crate::components`]）を、状態（通常・副操作・無効など）ごとに並べる。
+//! - 実際の各画面をiframeで読み込み、390pxと1280pxの幅で同時に確認できるようにする。
+//!
+//! # 責務外
+//! 製品の機能ではない。`main.rs`の`#[cfg(debug_assertions)]`により、debugビルドのときだけコンパイルされ、
+//! releaseの成果物には含まれない。ギャラリー専用のCSSは`GALLERY_CSS`に閉じ込め、`style.css`へは足さない。
+//!
+//! # 仕組み
+//! - 見本の一覧は、`COLORS`などの定数配列で持つ。`into_iter().map(...).collect_view()`で配列から要素を並べる。
+//! - 画面プレビューのiframeは、同じ開発サーバーのURL（例：`/library`）を読み込むので、アプリ本体がそのまま動く。
+//!   1280px側は、幅1280pxのiframeを`transform: scale(.5)`で半分に縮めて表示している。
+//!   iframeの幅を基準にmedia queryが効くので、390px側では下部ナビゲーションのレイアウトになる。
+//! - 部品を追加・変更したら、ここにも見本を追加する（README参照）。
 
 use crate::components::{Button, Dialog, EmptyState, ErrorNotice, TextField};
 use leptos::prelude::*;

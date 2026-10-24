@@ -1,3 +1,10 @@
+// タスク03のブラウザ成立性検証ページの動作。製品コードではなく、検証用の実験コード。
+//
+// 責務：<audio>で音源を再生し、Media Session API（OSのメディアキー・コントロールセンター連携）を操作する。
+//   - metadata()：曲情報をOSへ渡し、未登録なら操作ハンドラーを登録する
+//   - dispatch()：OSやボタンからの操作（再生・一時停止・前後の曲・シーク）を<audio>へ反映する
+//   - セッション解除：metadata・ハンドラー・位置情報を消し、以後のイベントやタイマーが状態を書き戻さないようにする
+// 実行結果は#eventsへログとして出し、browser-check.mjsがそのログと状態を検証する。
 const audio = document.querySelector('#audio');
 const events = document.querySelector('#events');
 let track = 1;

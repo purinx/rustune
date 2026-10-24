@@ -1,3 +1,41 @@
+//! アプリ全体の骨格（AppShell）と、各画面のroute定義。
+//!
+//! # 責務
+//! - URLと画面の対応（routing）を定義する。URLの管理とブラウザの戻る・進むは`leptos_router`が行う。
+//! - 画面を移っても消えない部分を保持する：サイドバー（狭い幅では下部ナビゲーション）、固定再生領域、
+//!   「Rustuneについて」ダイアログ。
+//! - 画面が変わるたびにウィンドウタイトルとh1を更新し、h1へフォーカスを移す。
+//!   スクリーンリーダーの利用者に、画面が変わったことを伝えるため。
+//! - 今の各画面は「準備中」の表示だけ。実際にAPIを呼ぶのは、設定画面のサーバー接続確認だけ。
+//!
+//! # 責務外
+//! 楽曲データの取得と再生（タスク12・13）は持たない。見た目の値は`style.css`のトークンが決める。
+//!
+//! # 構成
+//! ```text
+//! AppShell ── Router（URLを監視）
+//!   └ Shell
+//!       ├ aside.sidebar ：ブランド、NAVのリンク、「Rustuneについて」ボタン
+//!       ├ main          ：見出し（h1）＋ Routes（URLに一致する画面を1つ描画。なければNotFound）
+//!       ├ PlayerRegion  ：固定再生領域（準備中）
+//!       └ Dialog        ：「Rustuneについて」
+//! ```
+//! 895px以下でのレイアウト切り替え（サイドバー→下部ナビゲーション）は、CSSのmedia queryだけで行う。Rust側に分岐はない。
+//!
+//! # 処理の流れ（画面遷移）
+//! 1. `<A href=...>`をクリックすると、`leptos_router`がページを再読み込みせずにURLを変える（History API）。
+//! 2. `use_location().pathname`（signal）が変わり、`Routes`が該当する画面に差し替える。
+//! 3. 同じsignalに依存する`Effect`が再実行され、`title_for_path`で見出しを決め、タイトルの更新とh1へのフォーカスを行う。
+//!    h1の文字も同じ`page_title`クロージャを読んでいるので、自動で変わる。
+//!
+//! # Rustの読みどころ
+//! - `const NAV: [(&str, &str, &str); 8]`は、(パス, 表示名, アイコン)の組を8個持つ固定長の配列。
+//!   `&str`は文字列への参照で、文字列リテラルはプログラム全体の寿命（`'static`）を持つ。
+//! - `move || ...`は、使う変数をクロージャの中へ移して（所有権ごと取り込んで）作るクロージャ。
+//!   leptosのsignalやNodeRefは`Copy`（コピーしても同じ値を指す軽い識別子）なので、複数のクロージャに渡せる。
+//! - routeの`view=Library`のようにコンポーネント名を渡す書き方と、`view=|| view! { ... }`のように
+//!   引数なしのクロージャを渡す書き方がある。後者は、propsを渡して描画したいときに使う。
+
 use crate::components::{Button, Dialog, EmptyState, ErrorNotice, TextField};
 use leptos::{html, prelude::*};
 use leptos_router::{components::*, hooks::use_location, path};
@@ -14,11 +52,17 @@ const NAV: [(&str, &str, &str); 8] = [
     ("/exclusions", "除外した音源", "⊘"),
 ];
 
+/// アプリのルートコンポーネント。`Router`で包み、配下で`use_location`や`<A>`が使えるようにする。
 #[component]
 pub fn AppShell() -> impl IntoView {
     view! { <Router><Shell /></Router> }
 }
 
+/// 画面遷移しても残る骨格を描画する。各状態の役割は次のとおり。
+/// - `about_open`：「Rustuneについて」ダイアログの開閉。
+/// - `location`：現在のURL。`pathname`はsignalで、URLが変わると依存箇所が再実行される。
+/// - `heading`：h1要素への参照。画面遷移時にフォーカスを移すために使う。
+/// - `page_title`：URLから見出しを計算するクロージャ。h1の表示と`Effect`の両方が読む。
 #[component]
 fn Shell() -> impl IntoView {
     let about_open = RwSignal::new(false);
@@ -85,7 +129,11 @@ const DETAIL_SECTIONS: [&str; 3] = ["/albums", "/artists", "/playlists"];
 /// 既知セクション配下でも未定義のパス（`/library/missing`など）は`NotFound`と同じ見出しにする。
 /// ルーターは末尾スラッシュ1つを無視して照合するため（`/library/`はライブラリを描画）、同様に扱う。
 fn title_for_path(path: &str) -> &'static str {
+    // 末尾の`/`を1つだけ取り除く。`strip_suffix`は、一致しなければ`None`を返すので、そのときは元の値を使う。
     let path = path.strip_suffix('/').unwrap_or(path);
+    // NAVを先頭から調べ、条件に合う最初の項目の表示名を返す。見つからなければNOT_FOUND_TITLE。
+    // 条件は「一覧のパスと完全一致」か、「詳細を持つセクションの直下に、空でない1階層だけが続く」こと。
+    // `strip_prefix`は接頭辞を除いた残りを`Option`で返し、`and_then`は`Some`のときだけ次の処理へ進む。
     NAV.iter()
         .find(|(href, _, _)| {
             path == *href
@@ -135,6 +183,7 @@ mod tests {
     }
 }
 
+/// ライブラリ画面（準備中）。検索欄は無効状態で表示し、取り込み設定への導線を出す。
 #[component]
 fn Library() -> impl IntoView {
     view! {
@@ -146,6 +195,8 @@ fn Library() -> impl IntoView {
     }
 }
 
+/// アルバム・アーティスト・プレイリスト・お気に入りと、その詳細画面に共通の準備中表示。
+/// `kind`で画面名を差し替える。詳細画面の`:key`・`:id`は、まだ読み取らない。
 #[component]
 fn Collection(kind: &'static str) -> impl IntoView {
     view! { <EmptyState title="音楽がまだありません" description="ライブラリへの取り込み機能は準備中です。">
@@ -154,6 +205,7 @@ fn Collection(kind: &'static str) -> impl IntoView {
     </EmptyState> }
 }
 
+/// 取り込み画面（準備中）。スキャン開始ボタンは無効状態で表示する。
 #[component]
 fn Imports() -> impl IntoView {
     view! { <EmptyState title="取り込み履歴はまだありません" description="フォルダの走査と取り込み処理は準備中です。">
@@ -162,6 +214,7 @@ fn Imports() -> impl IntoView {
     </EmptyState> }
 }
 
+/// 除外した音源の画面（準備中）。
 #[component]
 fn Exclusions() -> impl IntoView {
     view! { <EmptyState title="除外した音源はありません" description="取り込みから除外した音源の管理機能は準備中です。">
@@ -169,6 +222,18 @@ fn Exclusions() -> impl IntoView {
     </EmptyState> }
 }
 
+/// 設定画面。今の段階で、実際にサーバーと通信する唯一の画面。
+///
+/// 「接続を確認」を押すと`GET /api/v1/health`を呼び、応答の`service`が`"rustune"`なら接続成功と表示する。
+/// - `checking`：通信中のフラグ。通信中はボタンを無効にして、二重送信を防ぐ。
+///   `get_untracked()`は、依存を登録せずに値だけを読む（クリック処理の中なので再実行は不要）。
+/// - `status`：結果の文言。`role="status"`と`aria-live="polite"`の領域に出すので、スクリーンリーダーが読み上げる。
+/// - `error`：失敗したときだけ`Some`になり、`ErrorNotice`を表示する。`None`のときは何も描画しない。
+///
+/// 非同期処理について：`spawn_local`は、ブラウザのイベントループ上で`async`ブロックを実行する。
+/// WASMはスレッドを使わないため、`await`の間は他の処理に制御を返す。
+/// 内側の`async { ... }.await`の中では`?`演算子を使い、通信・HTTPステータス・JSON解析のどこで失敗しても
+/// 1つの`Err`にまとめてから、`match`で表示を決める。
 #[component]
 fn Settings() -> impl IntoView {
     let checking = RwSignal::new(false);
@@ -218,6 +283,8 @@ fn Settings() -> impl IntoView {
     }
 }
 
+/// 画面下部に固定する再生領域（準備中）。画面遷移しても消えないよう、`Routes`の外に置く。
+/// ボタンは無効状態で、`aria-label`に「準備中」を含める。実際の再生処理はタスク12で接続する。
 #[component]
 fn PlayerRegion() -> impl IntoView {
     view! { <section class="player-region" aria-label="再生コントロール（準備中）">
@@ -231,6 +298,7 @@ fn PlayerRegion() -> impl IntoView {
     </section> }
 }
 
+/// どのrouteにも一致しないURLで表示する画面。見出しは`title_for_path`と同じ`NOT_FOUND_TITLE`を使う。
 #[component]
 fn NotFound() -> impl IntoView {
     view! { <EmptyState title=NOT_FOUND_TITLE description="ナビゲーションから移動先を選んでください。">

@@ -58,6 +58,13 @@ pub fn validate_number(value: u16) -> Result<(), InvalidInput> {
 
 /// 一覧取得のページ指定。省略したフィールドは`Default`（offset 0・limit 50）で補い、
 /// 明示した値は`validate`で検証する。
+///
+/// - `#[serde(default)]`：JSONで省略されたフィールドを、下の`Default`実装の値で埋める。
+///   `{}`ならoffset 0・limit 50、`{"offset":100}`ならlimitだけ50になる。
+/// - `#[serde(deny_unknown_fields)]`：定義にないフィールド（`{"page":2}`など）を含むJSONはエラーにする。
+///   名前を打ち間違えたときに、黙って既定値で処理されるのを防ぐ。
+/// - deserializeの時点では範囲を検査しない。受け取った側が`validate()`を呼び、
+///   limitが1〜100、offsetが0〜1,000,000であることを確認する。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Pagination {

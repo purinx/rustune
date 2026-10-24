@@ -1,5 +1,10 @@
-// Optional independent-browser fallback when the in-app browser is unavailable.
-// Uses an isolated profile. Personal audio requires an explicit local file setting.
+// タスク03のブラウザ成立性検証を、独立したChrome（一時プロファイル・headless）で自動実行するスクリプト。
+//
+// 責務：server.mjsで検証ページと音源を配信し、Chromeで次を確認する。
+//   - AAC音源のRange配信（HTTP 206）と再生・シーク
+//   - Media Session（metadata、playbackState、位置情報、操作ハンドラー）の登録・解除・再登録
+// 既定では合成音源（generate-fixture.mjsで生成）を使う。実音源は環境変数RUSTUNE_TEST_AUDIOで明示したときだけ使い、
+// CI環境（CI変数あり）では実音源の指定を拒否する。
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';

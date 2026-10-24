@@ -1,5 +1,12 @@
-// Build with Trunk first. This isolated shell test stubs only the foundation health API.
-// PLAYWRIGHT_PATH may point to an already installed playwright/index.mjs.
+// AppShell（タスク08）のChrome操作検証。
+//
+// 責務：Trunkのrelease成果物（crates/web/dist）を一時portで配信し、独立したChromeで次を確認する。
+//   - 幅390px/1280pxで、Enterキーによる全ナビゲーション、titleの更新とh1へのフォーカス、固定再生領域が残ること
+//   - ダイアログのTab/Shift+Tabの循環、Escape・閉じるボタンでのフォーカス復帰
+//   - 設定画面の接続確認（health APIの成功・失敗・再成功）、詳細URL・未知URL、ManifestとアイコンPNGの寸法
+// health APIだけをこのスクリプト内のスタブで返し、本物のサーバー・音声・業務APIは使わない。
+// 事前に`trunk build --release`を実行しておく。PLAYWRIGHT_PATHで、導入済みのplaywright/index.mjsを指定できる。
+// スクリーンショットはGit管理外の.local/screenshots/へ出力する。
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
