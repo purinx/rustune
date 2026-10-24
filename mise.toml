@@ -2,7 +2,7 @@
 # Rustのツールチェーンは rust-toolchain.toml で固定しているので、ここでは指定しない。
 
 [tools]
-# CSS・mjsのフォーマッター（OXC製、Rust実装）。CIでも同じバージョンを使う（.github/workflows/ci.yml）。
+# CSS・JSのフォーマッター（OXC製、Rust実装）。CIでも同じバージョンを使う（.github/workflows/ci.yml）。
 "npm:oxfmt" = "0.74.0"
 
 [env]
@@ -15,9 +15,9 @@ dir = "crates/stories"
 run = "trunk serve"
 
 [tasks.fmt]
-description = "Rust（rustfmt）とCSS・mjs（oxfmt）を整形する"
-run = ["cargo fmt --all", "oxfmt '**/*.css' '**/*.mjs'"]
+description = "Rust（rustfmt）とCSS・JS（oxfmt）を整形する"
+run = ["cargo fmt --all", "oxfmt '**/*.css' '**/*.mjs' '**/*.js'"]
 
 [tasks.fmt-check]
 description = "整形済みかを確認する（ファイルは変更しない）"
-run = ["cargo fmt --all -- --check", "oxfmt --check '**/*.css' '**/*.mjs'"]
+run = ["cargo fmt --all -- --check", "oxfmt --check '**/*.css' '**/*.mjs' '**/*.js'"]

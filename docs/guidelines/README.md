@@ -23,7 +23,7 @@
 | 項目 | 設定箇所 | 検査 |
 | --- | --- | --- |
 | フォーマット | rustfmt既定値（`rustfmt.toml`なし） | `cargo fmt --all -- --check` |
-| CSS・mjsのフォーマット | oxfmt（`.oxfmtrc.json`：幅100、JSはシングルクォート）。バージョンは`mise.toml`で固定 | `mise run fmt-check`（整形は`mise run fmt`） |
+| CSS・JSのフォーマット | oxfmt（`.oxfmtrc.json`：幅100、JSはシングルクォート）。バージョンは`mise.toml`で固定 | `mise run fmt-check`（整形は`mise run fmt`） |
 | Lint | Clippy既定、警告はエラー | `cargo clippy ... -- -D warnings`（native・WASM別） |
 | unsafe禁止 | `Cargo.toml`の`[workspace.lints.rust] unsafe_code = "forbid"` | コンパイル |
 | ツールチェーン | `rust-toolchain.toml`（Rust 1.99.1、edition 2024） | `rustup show` |
