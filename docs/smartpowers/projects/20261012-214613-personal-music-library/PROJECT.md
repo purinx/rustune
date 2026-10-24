@@ -5,7 +5,7 @@ Status: Active
 Created: 2026-10-12T21:46:13+09:00
 Slug: personal-music-library
 
-Last updated: 2026-10-18
+Last updated: 2026-10-24
 Phase: Implementation
 
 ## 方針
@@ -28,4 +28,5 @@ iTunes Storeで購入・ダウンロードした、ブラウザで再生可能�
 - 承認済み変更（2026-10-18 by user）：Safari/Firefoxの検証を削除し、初期版の対応・受け入れ対象をMacのChromeに限定する。
 - タスク03: Done。ChromeのManifest診断・自動回帰と、ユーザー実機での追加/更新・Dock再表示・指定曲聴音・シーク・背景メディアキー/コントロールセンター・外部リンクに成功。成果を08/12へ引き継ぐ。
 - タスク04: Done。domain/contractsの実装を統合し、native15テスト・Clippy・WASM check・rustfmtに成功。08は独立して実装中。05/06/07を同時実行枠に合わせ順次subagentへ割り当てる。
+- 承認済み変更（2026-10-24 by user）：契約の`ErrorCode`に`analysis_limit_exceeded`・`file_too_large`・`artwork_too_large`・`artwork_unsupported`・`artwork_invalid`を追加。06/07が文字列で返していた理由を契約へ集約する。MODULE_DESIGNのcode表へ反映。
 - 承認済みPRDと設計書に従い、依存順で実装する。
