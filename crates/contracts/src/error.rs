@@ -1,5 +1,29 @@
+//! 失敗の伝え方の契約：HTTPのエラー応答と、取り込み結果の理由に使うエラーcode。
+//!
+//! # 処理フロー
+//! ```mermaid
+//! sequenceDiagram
+//!     participant ui as UI（web）
+//!     participant api as server（HTTP）
+//!     participant svc as server（各処理）
+//!     ui->>api: リクエスト
+//!     api->>svc: 処理を依頼
+//!     svc-->>api: 失敗（内部のエラー型）
+//!     api->>api: ErrorCodeへ変換し、ErrorCode::responseでApiErrorを作る
+//!     api-->>ui: HTTP 4xx/5xx と ApiError（JSON）
+//!     ui->>ui: codeで表示を決める。知らないcodeならmessageをそのまま表示
+//! ```
+//! 内部のエラー（OSのエラー、パーサーのエラーなど）の文言は外へ出さず、必ず`ErrorCode`の定型文に置き換える。
+//!
 use serde::{Deserialize, Serialize};
+/// 失敗時にserverが返すJSONのbody。全APIで共通の形。
 /// 将来追加される未知のcodeも、UIの汎用フォールバック表示のために読み取れる。
+///
+/// - `code`：機械向けの識別子（[`ErrorCode::as_str`]の値）。UIはこれで表示や次の操作を決める。
+///   `ErrorCode`ではなく`String`で持つのは、UIより新しいserverが知らないcodeを返しても、deserializeに失敗させないため。
+/// - `message`：利用者向けの日本語の定型文（[`ErrorCode::message`]）。OSやパーサーのエラー文字列は入れない。
+/// - `retryable`：同じ操作をもう一度試す意味があるか。例：一時的な読み取り失敗は`true`、未対応の形式は`false`。
+/// - `request_id`：serverのログと突き合わせるためのID。利用者が問い合わせるときの手がかりにする。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiError {
     pub code: String,
@@ -7,6 +31,18 @@ pub struct ApiError {
     pub retryable: bool,
     pub request_id: String,
 }
+/// serverが返すエラーcodeの一覧。HTTPのエラー応答だけでなく、取り込み結果の理由としても使う。
+///
+/// # 使われる場所
+/// - **HTTPのエラー応答**：serverが[`ErrorCode::response`]で[`ApiError`]を作って返す。
+///   HTTPステータスとの対応はMODULE_DESIGN §2の表（例：`invalid_input`は400、`revision_conflict`は409）。
+/// - **取り込みの理由**：[`crate::imports::ImportItem::reason`]と、
+///   [`crate::imports::ImportJob::reason_counts`]のキーに`as_str()`の値が入る。
+///   例：購入曲と確認できないファイルは`skipped`で、理由は`purchase_unverified`。
+/// - **画像の警告**：`artwork_*`は、音源の取り込みは成功したが画像を使えなかったことを表す。
+///
+/// # 変更するとき
+/// codeの文字列はAPIの一部なので、一度公開した値は変えない。追加するときはMODULE_DESIGN §2の表も更新する。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErrorCode {
     InvalidInput,
@@ -33,6 +69,7 @@ pub enum ErrorCode {
     ArtworkInvalid,
 }
 impl ErrorCode {
+    /// JSONに出すcodeの文字列（snake_case）。
     pub fn as_str(self) -> &'static str {
         match self {
             Self::InvalidInput => "invalid_input",
@@ -59,6 +96,7 @@ impl ErrorCode {
             Self::ArtworkInvalid => "artwork_invalid",
         }
     }
+    /// 利用者向けの日本語の定型文。UIはこの文をそのまま表示できる。
     pub fn message(self) -> &'static str {
         match self {
             Self::InvalidInput => "入力内容を確認してください。",
@@ -85,6 +123,7 @@ impl ErrorCode {
             Self::ArtworkInvalid => "ジャケット画像を読み取れないため、既定の画像を表示します。",
         }
     }
+    /// HTTPのエラー応答のbodyを作る。`retryable`と`request_id`はserverが状況に応じて渡す。
     pub fn response(self, retryable: bool, request_id: String) -> ApiError {
         ApiError {
             code: self.as_str().to_owned(),

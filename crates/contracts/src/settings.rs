@@ -1,6 +1,26 @@
+//! 取り込み設定の契約：設定画面での取得と変更。
+//!
+//! # 処理フロー
+//! 1. 設定画面が`GET /api/v1/settings`で[`Settings`]を取得し、値と`revision`を持つ。
+//! 2. 保存するとき、変更した項目だけを入れた[`SettingsPatch`]を`PATCH /api/v1/settings`で送る。
+//! 3. serverは`validate()`で範囲を確認し、続けて取り込み元フォルダの存在・権限・保存先との重なりを確認する。
+//!    どれかが不正なら400（`invalid_input`か`invalid_source_root`）、revisionが違えば409。
+//!    取り込みジョブの実行中は、取り込み元を変更できない（409、MODULE_DESIGN §4）。
+//! 4. 保存できたら、新しい[`Settings`]を返す。
+//!
 use crate::{InvalidInput, Patch};
 use serde::{Deserialize, Serialize};
+/// `GET /api/v1/settings`の応答（`PATCH`の応答としても返す）。画面から変えられる取り込み設定。
 /// 取り込み元の絶対パスは、この設定の境界でだけ公開する。
+///
+/// - `source_root`：取り込み元フォルダの絶対パス。
+/// - `auto_import`・`interval_seconds`：自動取り込みの有無と、走査の間隔（秒）。
+/// - `max_file_bytes`：1ファイルの上限（超えると`file_too_large`で対象外）。
+/// - `reserve_free_bytes`：保存先に必ず残す空き容量（下回ると`storage_full`）。
+/// - `storefront`：iTunes Search APIの国コード（例：`jp`）。
+/// - `revision`：変更するときに`expected_revision`として送り返す。
+///
+/// port・保存先・ログなど運用の設定はTOMLファイルが持ち、ここには含めない（MODULE_DESIGN §4）。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Settings {
     pub source_root: String,
@@ -11,6 +31,8 @@ pub struct Settings {
     pub storefront: String,
     pub revision: u64,
 }
+/// `PATCH /api/v1/settings`のリクエスト。変更した項目だけを[`crate::Patch::Set`]で送る。
+/// 設定には「取り込み値へ戻す」がないので、[`crate::Patch::Clear`]（null）は`validate()`で拒否する。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SettingsPatch {
@@ -29,7 +51,10 @@ pub struct SettingsPatch {
     pub storefront: Patch<String>,
 }
 impl SettingsPatch {
+    /// 値の範囲だけを検証する：間隔30〜3600秒、上限1 MiB〜2 GiB、空き容量1 GiB以上、
+    /// 国コードは英小文字2文字、パスは空でなくNUL文字を含まない。
     /// ファイルシステム上の包含関係と権限の検証は、serverのconfig・sourceが担う。
+    /// （フォルダが存在するか、保存先と重なっていないかは、実際のファイルシステムを見ないとわからないため）
     pub fn validate(&self) -> Result<(), InvalidInput> {
         if matches!(&self.source_root, Patch::Clear)
             || matches!(self.auto_import, Patch::Clear)
