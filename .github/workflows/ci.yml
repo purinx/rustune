@@ -27,7 +27,7 @@ jobs:
       - name: Install pinned toolchain
         run: rustup show
       - name: WASM lint
-        run: cargo clippy --locked -p rustune-web --target wasm32-unknown-unknown -- -D warnings
+        run: cargo clippy --locked -p rustune-web -p rustune-stories --target wasm32-unknown-unknown -- -D warnings
       - name: Install Trunk
         run: cargo install trunk --version 0.21.14 --locked
       - name: Release build

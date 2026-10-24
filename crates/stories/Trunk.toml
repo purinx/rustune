@@ -1,0 +1,12 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[serve]
+addresses = ["127.0.0.1"]
+# アプリ本体（crates/web）の8080と同時に起動できるよう、portを分ける。
+port = 8081
+open = false
+
+[[proxy]]
+backend = "http://127.0.0.1:3867/api/"

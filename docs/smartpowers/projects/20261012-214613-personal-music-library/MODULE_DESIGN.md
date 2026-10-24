@@ -21,6 +21,7 @@ flowchart TB
     serverCrate --> contractsCrate["rustune-contracts"]
     webCrate["rustune-web"] --> domainCrate
     webCrate --> contractsCrate
+    storiesCrate["rustune-stories（開発専用）"] -.-> webCrate
     serverCrate --> serverDeps["Axum・SQLx・Tokio・OS I/O"]
     webCrate --> webDeps["Leptos・web-sys"]
     domainCrate --> pureTypes["ドメイン型・不変条件・純粋ロジック"]
@@ -425,12 +426,12 @@ flowchart LR
 
 LaunchAgentはユーザーログインで起動し、絶対パスのバイナリとconfigを渡す。異常終了時だけ再起動、間隔10秒。実際のplistと設定・解除手順は実装時に追加し、インストールだけでMusicフォルダや起動設定を自動変更しない。配布資産とDB migrationを同じリリースにまとめ、更新前バックアップから戻せる構成とする。
 
-フォーマットはrustfmt、LintはClippyを採用。workspaceの製品crate名は`rustune-domain`、`rustune-contracts`、`rustune-server`、`rustune-web`とし、CIではnativeとWASMを分ける。
+フォーマットはrustfmt、LintはClippyを採用。workspaceの製品crate名は`rustune-domain`、`rustune-contracts`、`rustune-server`、`rustune-web`とし、CIではnativeとWASMを分ける。開発専用のUIギャラリーは製品crateと分け、`rustune-stories`（`crates/stories`）に置く。`rustune-web`の部品と画面（libraryの`shell`・`components`）を使い、製品の成果物には含めない（2026-10-24 by user）。
 
 ```sh
 cargo fmt --all -- --check
 cargo clippy -p rustune-domain -p rustune-contracts -p rustune-server --all-targets -- -D warnings
-cargo clippy -p rustune-web --target wasm32-unknown-unknown -- -D warnings
+cargo clippy -p rustune-web -p rustune-stories --target wasm32-unknown-unknown -- -D warnings
 cargo test -p rustune-domain -p rustune-contracts -p rustune-server
 ```
 

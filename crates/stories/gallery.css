@@ -1,0 +1,21 @@
+/* UIギャラリー専用のスタイル。アプリ本体の style.css には足さない。 */
+.gallery { max-width: 1440px; margin: 0 auto; padding: var(--space-8) var(--space-4); }
+.gallery > header p { color: var(--text-secondary); font-size: var(--text-caption); }
+.gallery-section { margin-top: var(--space-8); padding: var(--space-6); background: var(--surface); border-radius: var(--radius-card); }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); }
+.gallery-case { padding: var(--space-4); background: var(--background); border-radius: var(--radius-card); }
+.gallery-case > h3 { margin: 0 0 var(--space-3); color: var(--text-secondary); font-size: var(--text-small); font-weight: var(--weight-bold); }
+.gallery-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.gallery-swatch { height: 56px; margin-bottom: var(--space-2); border-radius: var(--radius-art); box-shadow: var(--shadow-input); }
+.gallery-token { color: var(--text-secondary); font-size: var(--text-small); }
+.gallery-shape { width: 72px; height: 48px; background: var(--surface-interactive); }
+.gallery-elevation { height: 64px; background: var(--surface-elevated); border-radius: var(--radius-card); }
+.gallery-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
+.gallery-tabs button { min-height: 36px; padding: var(--space-2) var(--space-4); letter-spacing: 0; text-transform: none; }
+.gallery-frames { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-6); }
+.gallery-frames figure { margin: 0; }
+.gallery-frames figcaption { margin-bottom: var(--space-2); color: var(--text-secondary); font-size: var(--text-small); }
+.gallery-frame { border: 0; border-radius: var(--radius-card); background: var(--background); box-shadow: var(--shadow-heavy); }
+.gallery-scaled { width: 640px; height: 420px; overflow: hidden; border-radius: var(--radius-card); }
+.gallery-scaled iframe { width: 1280px; height: 840px; transform: scale(.5); transform-origin: 0 0; }
+.gallery-nav { position: static; inset: auto; height: auto; padding: 0; background: none; }

@@ -1,23 +1,24 @@
-//! `trunk serve`の`/gallery`で表示する、開発専用のUIギャラリー（Storybookの代わり）。
+//! `/gallery`で表示する、開発専用のUIギャラリー（Storybookの代わり）。
 //!
 //! # 責務
 //! - 共有CSSトークン（配色・文字・角丸・影）の見本を並べ、`design.md`との整合を目で確認できるようにする。
-//! - 共通部品（[`crate::components`]）を、状態（通常・副操作・無効など）ごとに並べる。
+//! - 共通部品（[`rustune_web::components`]）を、状態（通常・副操作・無効など）ごとに並べる。
 //! - 実際の各画面をiframeで読み込み、390pxと1280pxの幅で同時に確認できるようにする。
 //!
 //! # 責務外
-//! 製品の機能ではない。`main.rs`の`#[cfg(debug_assertions)]`により、debugビルドのときだけコンパイルされ、
-//! releaseの成果物には含まれない。ギャラリー専用のCSSは`GALLERY_CSS`に閉じ込め、`style.css`へは足さない。
+//! 製品の機能ではない。`rustune-stories`は別crateで、アプリ本体（`rustune-web`）の成果物には含まれない。
+//! ギャラリー専用のCSSは`crates/stories/gallery.css`に置き、`crates/web/style.css`へは足さない。
 //!
 //! # 仕組み
 //! - 見本の一覧は、`COLORS`などの定数配列で持つ。`into_iter().map(...).collect_view()`で配列から要素を並べる。
-//! - 画面プレビューのiframeは、同じ開発サーバーのURL（例：`/library`）を読み込むので、アプリ本体がそのまま動く。
+//! - 画面プレビューのiframeは、同じ開発サーバーのURL（例：`/library`）を読み込む。`/gallery`以外のURLでは
+//!   `main.rs`がアプリ本体（[`rustune_web::shell::AppShell`]）を描画するので、実際の画面がそのまま動く。
 //!   1280px側は、幅1280pxのiframeを`transform: scale(.5)`で半分に縮めて表示している。
 //!   iframeの幅を基準にmedia queryが効くので、390px側では下部ナビゲーションのレイアウトになる。
-//! - 部品を追加・変更したら、ここにも見本を追加する（README参照）。
+//! - 部品を追加・変更したら、ここにも見本を追加する（`crates/stories/README.md`参照）。
 
-use crate::components::{Button, Dialog, EmptyState, ErrorNotice, TextField};
 use leptos::prelude::*;
+use rustune_web::components::{Button, Dialog, EmptyState, ErrorNotice, TextField};
 
 const COLORS: [(&str, &str); 11] = [
     ("--background", "Near Black"),
@@ -63,34 +64,10 @@ const SCREENS: [(&str, &str); 10] = [
     ("/unknown", "未知URL"),
 ];
 
-const GALLERY_CSS: &str = r#"
-.gallery { max-width: 1440px; margin: 0 auto; padding: var(--space-8) var(--space-4); }
-.gallery > header p { color: var(--text-secondary); font-size: var(--text-caption); }
-.gallery-section { margin-top: var(--space-8); padding: var(--space-6); background: var(--surface); border-radius: var(--radius-card); }
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); }
-.gallery-case { padding: var(--space-4); background: var(--background); border-radius: var(--radius-card); }
-.gallery-case > h3 { margin: 0 0 var(--space-3); color: var(--text-secondary); font-size: var(--text-small); font-weight: var(--weight-bold); }
-.gallery-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.gallery-swatch { height: 56px; margin-bottom: var(--space-2); border-radius: var(--radius-art); box-shadow: var(--shadow-input); }
-.gallery-token { color: var(--text-secondary); font-size: var(--text-small); }
-.gallery-shape { width: 72px; height: 48px; background: var(--surface-interactive); }
-.gallery-elevation { height: 64px; background: var(--surface-elevated); border-radius: var(--radius-card); }
-.gallery-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
-.gallery-tabs button { min-height: 36px; padding: var(--space-2) var(--space-4); letter-spacing: 0; text-transform: none; }
-.gallery-frames { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-6); }
-.gallery-frames figure { margin: 0; }
-.gallery-frames figcaption { margin-bottom: var(--space-2); color: var(--text-secondary); font-size: var(--text-small); }
-.gallery-frame { border: 0; border-radius: var(--radius-card); background: var(--background); box-shadow: var(--shadow-heavy); }
-.gallery-scaled { width: 640px; height: 420px; overflow: hidden; border-radius: var(--radius-card); }
-.gallery-scaled iframe { width: 1280px; height: 840px; transform: scale(.5); transform-origin: 0 0; }
-.gallery-nav { position: static; inset: auto; height: auto; padding: 0; background: none; }
-"#;
-
 #[component]
 pub fn Gallery() -> impl IntoView {
     document().set_title("UIギャラリー — Rustune");
     view! {
-        <style>{GALLERY_CSS}</style>
         <div class="gallery">
             <header>
                 <h1>"Rustune UIギャラリー"</h1>
