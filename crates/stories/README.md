@@ -4,10 +4,13 @@ Storybookの代わりに、共有CSSトークン・共通部品・各画面を�
 
 ## 起動
 
+リポジトリルートで次を実行する（[mise](https://mise.jdx.dev/)のタスク。定義はルートの`mise.toml`）。
+
 ```sh
-cd crates/stories
-trunk serve
+mise run gallery
 ```
+
+初回は`mise trust`でルートの`mise.toml`を信頼する必要がある。miseを使わない場合は`cd crates/stories && trunk serve`でも同じ。
 
 `http://127.0.0.1:8081/gallery`を開く。portはアプリ本体（`crates/web`の8080）と同時に起動できるよう分けている。
 

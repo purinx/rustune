@@ -28,7 +28,7 @@ Manifestと自作192px/512pxアイコンはタスク03の検証済み資産を�
 
 ## UIギャラリー（開発専用）
 
-Storybookの代わりのUIギャラリーは、別crateの`rustune-stories`（`crates/stories`）にある。起動方法は`crates/stories/README.md`を参照する。アプリ本体の成果物には含まれない。部品を追加・変更したら、ギャラリーにも見本を追加する。
+Storybookの代わりのUIギャラリーは、別crateの`rustune-stories`（`crates/stories`）にある。リポジトリルートで`mise run gallery`を実行し、`http://127.0.0.1:8081/gallery`を開く（詳細は`crates/stories/README.md`）。アプリ本体の成果物には含まれない。部品を追加・変更したら、ギャラリーにも見本を追加する。
 
 検証コマンド（リポジトリルートから）:
 
