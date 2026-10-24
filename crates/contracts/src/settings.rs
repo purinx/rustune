@@ -12,23 +12,22 @@ use crate::{InvalidInput, Patch};
 use serde::{Deserialize, Serialize};
 /// `GET /api/v1/settings`の応答（`PATCH`の応答としても返す）。画面から変えられる取り込み設定。
 /// 取り込み元の絶対パスは、この設定の境界でだけ公開する。
-///
-/// - `source_root`：取り込み元フォルダの絶対パス。
-/// - `auto_import`・`interval_seconds`：自動取り込みの有無と、走査の間隔（秒）。
-/// - `max_file_bytes`：1ファイルの上限（超えると`file_too_large`で対象外）。
-/// - `reserve_free_bytes`：保存先に必ず残す空き容量（下回ると`storage_full`）。
-/// - `storefront`：iTunes Search APIの国コード（例：`jp`）。
-/// - `revision`：変更するときに`expected_revision`として送り返す。
-///
 /// port・保存先・ログなど運用の設定はTOMLファイルが持ち、ここには含めない（MODULE_DESIGN §4）。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Settings {
+    /// 取り込み元フォルダの絶対パス。
     pub source_root: String,
+    /// 自動取り込み（起動時と定期走査）を行うか。
     pub auto_import: bool,
+    /// 定期走査の間隔（秒、30〜3600）。
     pub interval_seconds: u32,
+    /// 1ファイルのサイズの上限（バイト、1 MiB〜2 GiB）。超えると`file_too_large`で対象外。
     pub max_file_bytes: u64,
+    /// 保存先に必ず残す空き容量（バイト、1 GiB以上）。下回ると`storage_full`。
     pub reserve_free_bytes: u64,
+    /// iTunes Search APIで使う国コード（英小文字2文字、例：`jp`）。
     pub storefront: String,
+    /// 設定の更新番号。変更するときに`expected_revision`として送り返す。
     pub revision: u64,
 }
 /// `PATCH /api/v1/settings`のリクエスト。変更した項目だけを[`crate::Patch::Set`]で送る。
@@ -36,17 +35,24 @@ pub struct Settings {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SettingsPatch {
+    /// 変更前に読んだ[`Settings::revision`]。
     pub expected_revision: u64,
+    /// 取り込み元フォルダの絶対パス。取り込みジョブの実行中は変更できない（409）。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub source_root: Patch<String>,
+    /// 自動取り込みの有無。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub auto_import: Patch<bool>,
+    /// 定期走査の間隔（秒、30〜3600）。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub interval_seconds: Patch<u32>,
+    /// 1ファイルの上限（バイト、1 MiB〜2 GiB）。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub max_file_bytes: Patch<u64>,
+    /// 保存先に残す空き容量（バイト、1 GiB以上）。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub reserve_free_bytes: Patch<u64>,
+    /// 国コード（英小文字2文字）。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub storefront: Patch<String>,
 }

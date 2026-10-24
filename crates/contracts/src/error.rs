@@ -18,17 +18,16 @@
 use serde::{Deserialize, Serialize};
 /// 失敗時にserverが返すJSONのbody。全APIで共通の形。
 /// 将来追加される未知のcodeも、UIの汎用フォールバック表示のために読み取れる。
-///
-/// - `code`：機械向けの識別子（[`ErrorCode::as_str`]の値）。UIはこれで表示や次の操作を決める。
-///   `ErrorCode`ではなく`String`で持つのは、UIより新しいserverが知らないcodeを返しても、deserializeに失敗させないため。
-/// - `message`：利用者向けの日本語の定型文（[`ErrorCode::message`]）。OSやパーサーのエラー文字列は入れない。
-/// - `retryable`：同じ操作をもう一度試す意味があるか。例：一時的な読み取り失敗は`true`、未対応の形式は`false`。
-/// - `request_id`：serverのログと突き合わせるためのID。利用者が問い合わせるときの手がかりにする。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiError {
+    /// 機械向けの識別子（[`ErrorCode::as_str`]の値）。UIはこれで表示や次の操作を決める。
+    /// `ErrorCode`ではなく`String`で持つのは、UIより新しいserverが知らないcodeを返しても、deserializeに失敗させないため。
     pub code: String,
+    /// 利用者向けの日本語の定型文（[`ErrorCode::message`]）。OSやパーサーのエラー文字列は入れない。
     pub message: String,
+    /// 同じ操作をもう一度試す意味があるか。例：一時的な読み取り失敗は`true`、未対応の形式は`false`。
     pub retryable: bool,
+    /// serverのログと突き合わせるためのID。
     pub request_id: String,
 }
 /// serverが返すエラーcodeの一覧。HTTPのエラー応答だけでなく、取り込み結果の理由としても使う。
@@ -45,27 +44,49 @@ pub struct ApiError {
 /// codeの文字列はAPIの一部なので、一度公開した値は変えない。追加するときはMODULE_DESIGN §2の表も更新する。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErrorCode {
+    /// 入力が不正（`validate`の失敗など）。HTTP 400。
     InvalidInput,
+    /// 取り込み元フォルダが存在しない・フォルダではない・保存先と重なっている。HTTP 400。
     InvalidSourceRoot,
+    /// 指定したIDの対象がない。HTTP 404。
     NotFound,
+    /// 曲はあるが、保存した音源ファイルが見つからない。HTTP 404。
     MediaMissing,
+    /// `expected_revision`が現在のrevisionと違う（他で先に更新された）。HTTP 409。
     RevisionConflict,
+    /// 取り込みジョブの実行中なのでできない操作。HTTP 409。
     ImportBusy,
+    /// 取り込み元を読む権限がない。取り込みの理由、または必要ならAPIエラー。
     SourcePermissionDenied,
+    /// 保存先の空き容量が設定の下限を下回る。取り込みの理由、または必要ならAPIエラー。
     StorageFull,
+    /// 対応していない音源形式（AAC以外など）。取り込みの理由（対象外）。
     UnsupportedCodec,
+    /// 音源の構造が解析の上限（箱の数・深さ・タグの大きさなど）を超えた。取り込みの理由（対象外）。
     AnalysisLimitExceeded,
+    /// ファイルが設定の`max_file_bytes`を超えた。取り込みの理由（対象外）。
     FileTooLarge,
+    /// 購入した曲だと確認できない。取り込みの理由（対象外）。
     PurchaseUnverified,
+    /// コピー中にファイルが変わった、または書き込み途中の可能性がある。次の走査で再評価する。
     FileUnstable,
+    /// 音源の構造が壊れていて読めない。取り込みの理由（失敗）。
     CorruptAudio,
+    /// 処理が中断された（終了・キャンセル）。復旧後に再試行する。
     Interrupted,
+    /// ファイルの読み書きに失敗した。
     IoFailure,
+    /// 補完サービス（iTunes Search API）に接続できない。HTTP 502。
     UpstreamUnavailable,
+    /// 補完サービスの利用回数の制限にかかった。HTTP 503。
     UpstreamRateLimited,
+    /// 識別情報（ストアIDや音声digest）が、それぞれ別の既存の曲に一致した。自動で統合せず、この理由で止める。
     IdentityConflict,
+    /// ジャケット画像が大きすぎる（10 MiB・16メガピクセルを超える）。画像の警告で、音源は取り込む。
     ArtworkTooLarge,
+    /// ジャケット画像がJPEG・PNG以外。画像の警告で、音源は取り込む。
     ArtworkUnsupported,
+    /// ジャケット画像が壊れていて読めない。画像の警告で、音源は取り込む。
     ArtworkInvalid,
 }
 impl ErrorCode {

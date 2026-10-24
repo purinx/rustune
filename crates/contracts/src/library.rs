@@ -40,63 +40,82 @@ use uuid::Uuid;
 
 /// 一覧に出す1曲分の情報。`GET /api/v1/tracks`（検索・一覧）、アルバム・アーティスト・お気に入りの各一覧で、
 /// [`crate::Page`]の`items`として返す。取り込みが完了した（ready状態の）曲だけが含まれる。
-///
-/// - `title`・`artist`・`album`：手動編集・補完・取り込み値のうち、有効な値（どれを使ったかは[`TrackDetail`]で返す）。
-/// - `artwork_id`：`GET /api/v1/artwork/:artwork_id`で画像を取るためのID。`None`なら既定画像を表示する。
-/// - `revision`：この曲の更新番号。編集（[`MetadataPatch`]）のときに`expected_revision`として送り返す。
-///
-/// 再生は`GET /api/v1/media/:id`（`id`を使う）。保存先のパスは含めない。
+/// 保存先のパスは含めない。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TrackSummary {
+    /// 曲のID。詳細（`GET /tracks/:id`）、再生（`GET /media/:id`）、編集・削除の対象を指す。
     pub id: Uuid,
+    /// 曲名。手動編集・補完・取り込み値のうち、表示に使う有効な値（由来は[`TrackDetail::metadata_origins`]）。
     pub title: String,
+    /// アーティスト名（有効な値）。
     pub artist: String,
+    /// アルバム名（有効な値）。
     pub album: String,
+    /// 再生時間（ミリ秒）。
     pub duration_ms: u64,
+    /// ジャケット画像のID。`GET /api/v1/artwork/:artwork_id`で取得する。`None`なら既定画像を表示する。
     pub artwork_id: Option<Uuid>,
+    /// お気に入りに入っているか。`PUT`・`DELETE /tracks/:id/favorite`で切り替える。
     pub favorite: bool,
+    /// この曲の更新番号。編集（[`MetadataPatch`]）のときに`expected_revision`として送り返す。
     pub revision: u64,
 }
 /// 曲の取り込み元。取り込み元フォルダの名前と、その中の相対パスだけを返す（絶対パスは返さない）。
 /// 同じ音源が別のパスにも見つかった場合は、[`TrackDetail::sources`]に複数並ぶ。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
+    /// 取り込み元フォルダの表示名。絶対パスではない。
     pub root_name: String,
+    /// 取り込み元フォルダの中での相対パス。
     pub relative_path: String,
+    /// このファイルから取り込んだ日時（UTCのRFC 3339）。
     pub imported_at: String,
 }
 /// 表示している値がどこから来たか。編集画面で「手動で変更済み」などを示し、取り込み値へ戻す操作に使う。
-/// - `manual`：利用者が編集した値
-/// - `enriched`：iTunes Search APIの補完で反映した値
-/// - `imported`：音源ファイルのタグから読んだ値
-/// - `fallback`：タグがなく、ファイル名などから補った値
+/// 表示に使う値の優先順位は、手動 > 補完 > 取り込み > 代替（MODULE_DESIGN §3）。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MetadataOrigin {
+    /// 利用者が編集した値。
     Manual,
+    /// iTunes Search APIの補完で、利用者が明示して反映した値。
     Enriched,
+    /// 音源ファイルのタグから読んだ値。
     Imported,
+    /// タグがなく、ファイル名などから補った値。
     Fallback,
 }
-/// 項目ごとの[`MetadataOrigin`]。
+/// [`TrackDetail`]の項目ごとの[`MetadataOrigin`]。フィールド名は[`TrackDetail`]・[`TrackSummary`]の項目に対応する。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MetadataOrigins {
+    /// 曲名の由来。
     pub title: MetadataOrigin,
+    /// アーティスト名の由来。
     pub artist: MetadataOrigin,
+    /// アルバム名の由来。
     pub album: MetadataOrigin,
+    /// アルバムアーティストの由来。
     pub album_artist: MetadataOrigin,
+    /// ディスク番号の由来。
     pub disc_number: MetadataOrigin,
+    /// 曲順の由来。
     pub track_number: MetadataOrigin,
 }
 /// `GET /api/v1/tracks/:id`の応答。曲の詳細・編集画面で使う。
 /// 一覧用の[`TrackSummary`]に、アルバムアーティスト・番号・取り込み元・各値の由来を加えたもの。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TrackDetail {
+    /// 一覧と同じ基本情報（ID・曲名・revisionなど）。
     pub summary: TrackSummary,
+    /// アルバムアーティスト。コンピレーションなどで曲のアーティストと異なる場合に使う。未設定なら`None`。
     pub album_artist: Option<String>,
+    /// ディスク番号（1〜999）。未設定なら`None`。
     pub disc_number: Option<u16>,
+    /// ディスク内の曲順（1〜999）。未設定なら`None`。
     pub track_number: Option<u16>,
+    /// この曲の取り込み元の一覧。同じ音源が別のパスにも見つかった場合は複数並ぶ。
     pub sources: Vec<Source>,
+    /// 各項目の値の由来。編集画面で「手動で変更済み」の表示や、取り込み値へ戻す操作に使う。
     pub metadata_origins: MetadataOrigins,
 }
 
@@ -109,17 +128,24 @@ pub struct TrackDetail {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MetadataPatch {
+    /// 編集前に読んだ曲の`revision`。現在の値と違えば`revision_conflict`（409）。
     pub expected_revision: u64,
+    /// 曲名。`Set`は1〜512文字、`Clear`は取り込み値へ戻す。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub title: Patch<String>,
+    /// アーティスト名。条件は`title`と同じ。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub artist: Patch<String>,
+    /// アルバム名。条件は`title`と同じ。変えるとアルバムのまとまり（[`AlbumSummary::id`]）も変わる。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub album: Patch<String>,
+    /// アルバムアーティスト。条件は`title`と同じ。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub album_artist: Patch<String>,
+    /// ディスク番号。`Set`は1〜999。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub disc_number: Patch<u16>,
+    /// 曲順。`Set`は1〜999。
     #[serde(default, skip_serializing_if = "Patch::is_keep")]
     pub track_number: Patch<u16>,
 }
@@ -146,22 +172,29 @@ impl MetadataPatch {
 /// プレイリストの1項目。`id`は項目ごとの独自UUIDで、同じ曲（`track_id`）を複数回入れても区別できる。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlaylistItem {
+    /// プレイリスト内での項目のID。新しく追加する項目にはUIが新しいUUIDを振る。
     pub id: Uuid,
+    /// 入れる曲のID（[`TrackSummary::id`]）。
     pub track_id: Uuid,
 }
 /// プレイリスト。`GET /api/v1/playlists/:id`の応答で、作成・改名・並べ替えの応答としても返す。
 /// `items`の順番が再生順。`revision`は改名・並べ替えのときに`expected_revision`として送り返す。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Playlist {
+    /// プレイリストのID。
     pub id: Uuid,
+    /// プレイリスト名（1〜120文字）。
     pub name: String,
+    /// 更新番号。改名・並べ替えのときに`expected_revision`として送り返す。
     pub revision: u64,
+    /// 再生順に並べた項目。
     pub items: Vec<PlaylistItem>,
 }
 /// `POST /api/v1/playlists`のリクエスト。名前はtrim後1〜120文字。成功すると201と[`Playlist`]を返す。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CreatePlaylist {
+    /// プレイリスト名。trim後1〜120文字。
     pub name: String,
 }
 impl CreatePlaylist {
@@ -175,7 +208,9 @@ impl CreatePlaylist {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RenamePlaylist {
+    /// 改名前に読んだ[`Playlist::revision`]。
     pub expected_revision: u64,
+    /// 新しい名前。trim後1〜120文字。
     pub name: String,
 }
 impl RenamePlaylist {
@@ -193,7 +228,9 @@ impl RenamePlaylist {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ReplacePlaylistItems {
+    /// 変更前に読んだ[`Playlist::revision`]。
     pub expected_revision: u64,
+    /// 変更後の全項目を、再生したい順に並べたもの。ここにない既存の項目は削除される。
     pub items: Vec<PlaylistItem>,
 }
 impl ReplacePlaylistItems {
@@ -213,24 +250,35 @@ impl ReplacePlaylistItems {
 /// 詳細の`GET /api/v1/albums/:key`に使う。メタデータの編集でアルバムが変わると、キーも変わることがある。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AlbumSummary {
+    /// アルバムのキー。ストアのIDか、表示名から作った値。`GET /albums/:key`に使う。
     pub id: String,
+    /// アルバム名。
     pub title: String,
+    /// アルバムのアーティスト名。
     pub artist: String,
+    /// 代表のジャケット画像のID。`None`なら既定画像。
     pub artwork_id: Option<Uuid>,
+    /// このアルバムに含まれるready状態の曲数。
     pub track_count: u64,
 }
 /// `GET /api/v1/artists`の1件。`id`は詳細の`GET /api/v1/artists/:key`に使うキー。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArtistSummary {
+    /// アーティストのキー。`GET /artists/:key`に使う。
     pub id: String,
+    /// アーティスト名。
     pub name: String,
+    /// このアーティストのready状態の曲数。
     pub track_count: u64,
 }
 /// `GET /api/v1/exclusions`の1件。ライブラリから削除し、再び取り込まないようにした曲。
 /// `DELETE /api/v1/exclusions/:id`で除外を解除すると、次の走査で再び取り込まれる。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Exclusion {
+    /// 除外した曲のID。除外の解除（`DELETE /exclusions/:id`）に使う。
     pub track_id: Uuid,
+    /// 除外したときの曲名（一覧での表示用）。
     pub title: String,
+    /// 除外した日時（UTCのRFC 3339）。
     pub excluded_at: String,
 }

@@ -71,9 +71,12 @@ pub mod settings;
 /// `Keep`はキーごと省略して表すので、serializeしようとするとエラーにする（`skip_serializing_if`で省略される前提）。
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Patch<T> {
+    /// 変更しない（JSONではキーを省略）。
     #[default]
     Keep,
+    /// この値に設定する（JSONでは値）。
     Set(T),
+    /// 手動の値を消して取り込み値へ戻す（JSONでは`null`）。
     Clear,
 }
 impl<T> Patch<T> {
@@ -159,7 +162,10 @@ pub struct Page<T> {
 /// 設定画面の「接続を確認」が、`service == "rustune"`で接続先がRustuneのサーバーかを判定する。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct HealthResponse {
+    /// サービス名。Rustuneのサーバーなら`"rustune"`。
     pub service: String,
+    /// サーバーのバージョン。
     pub version: String,
+    /// 実装の段階。現在の開発基盤では`"foundation"`。
     pub stage: String,
 }
