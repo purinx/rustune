@@ -18,6 +18,8 @@ pub enum ErrorCode {
     SourcePermissionDenied,
     StorageFull,
     UnsupportedCodec,
+    AnalysisLimitExceeded,
+    FileTooLarge,
     PurchaseUnverified,
     FileUnstable,
     CorruptAudio,
@@ -26,6 +28,9 @@ pub enum ErrorCode {
     UpstreamUnavailable,
     UpstreamRateLimited,
     IdentityConflict,
+    ArtworkTooLarge,
+    ArtworkUnsupported,
+    ArtworkInvalid,
 }
 impl ErrorCode {
     pub fn as_str(self) -> &'static str {
@@ -39,6 +44,8 @@ impl ErrorCode {
             Self::SourcePermissionDenied => "source_permission_denied",
             Self::StorageFull => "storage_full",
             Self::UnsupportedCodec => "unsupported_codec",
+            Self::AnalysisLimitExceeded => "analysis_limit_exceeded",
+            Self::FileTooLarge => "file_too_large",
             Self::PurchaseUnverified => "purchase_unverified",
             Self::FileUnstable => "file_unstable",
             Self::CorruptAudio => "corrupt_audio",
@@ -47,6 +54,9 @@ impl ErrorCode {
             Self::UpstreamUnavailable => "upstream_unavailable",
             Self::UpstreamRateLimited => "upstream_rate_limited",
             Self::IdentityConflict => "identity_conflict",
+            Self::ArtworkTooLarge => "artwork_too_large",
+            Self::ArtworkUnsupported => "artwork_unsupported",
+            Self::ArtworkInvalid => "artwork_invalid",
         }
     }
     pub fn message(self) -> &'static str {
@@ -60,6 +70,8 @@ impl ErrorCode {
             Self::SourcePermissionDenied => "取り込み元を読み取れません。",
             Self::StorageFull => "保存先の空き容量が不足しています。",
             Self::UnsupportedCodec => "対応していない音源形式です。",
+            Self::AnalysisLimitExceeded => "音源の構造が解析できる上限を超えています。",
+            Self::FileTooLarge => "音源ファイルが取り込める大きさを超えています。",
             Self::PurchaseUnverified => "購入由来の情報を確認できません。",
             Self::FileUnstable => "ファイルの書き込み完了を待っています。",
             Self::CorruptAudio => "音源の構造を読み取れません。",
@@ -68,6 +80,9 @@ impl ErrorCode {
             Self::UpstreamUnavailable => "補完サービスに接続できません。",
             Self::UpstreamRateLimited => "しばらく待ってから補完を再実行してください。",
             Self::IdentityConflict => "楽曲の識別情報が競合しています。",
+            Self::ArtworkTooLarge => "ジャケット画像が大きすぎるため、既定の画像を表示します。",
+            Self::ArtworkUnsupported => "対応していない画像形式のため、既定の画像を表示します。",
+            Self::ArtworkInvalid => "ジャケット画像を読み取れないため、既定の画像を表示します。",
         }
     }
     pub fn response(self, retryable: bool, request_id: String) -> ApiError {

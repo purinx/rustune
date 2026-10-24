@@ -113,6 +113,20 @@ fn unknown_error_codes_survive_for_ui_fallback_and_messages_are_fixed() {
     assert_eq!(known.message, "楽曲の識別情報が競合しています。");
 }
 #[test]
+fn skip_reason_and_artwork_warning_codes_have_stable_wire_names() {
+    for (code, wire) in [
+        (ErrorCode::AnalysisLimitExceeded, "analysis_limit_exceeded"),
+        (ErrorCode::FileTooLarge, "file_too_large"),
+        (ErrorCode::ArtworkTooLarge, "artwork_too_large"),
+        (ErrorCode::ArtworkUnsupported, "artwork_unsupported"),
+        (ErrorCode::ArtworkInvalid, "artwork_invalid"),
+    ] {
+        let response = code.response(false, "request-3".into());
+        assert_eq!(response.code, wire);
+        assert!(!response.message.is_empty());
+    }
+}
+#[test]
 fn playlist_entries_can_repeat_tracks_but_not_entry_ids() {
     let a = PlaylistItem {
         id: Uuid::from_u128(1),

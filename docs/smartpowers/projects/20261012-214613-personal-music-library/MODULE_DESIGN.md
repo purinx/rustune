@@ -67,10 +67,12 @@ PATCHは各フィールドを`Keep / Set(value) / Clear`の3状態で表す。JS
 | revision_conflict / import_busy | 409 | 最新状態を読み直す |
 | source_permission_denied / storage_full | ジョブ項目、必要ならAPIエラー | 原因解消後に再試行 |
 | unsupported_codec / purchase_unverified | スキップ理由 | 内容変更まで自動再試行しない |
+| analysis_limit_exceeded / file_too_large | スキップ理由（解析上限・max_file超過） | 内容または上限設定の変更まで自動再試行しない |
 | file_unstable | スキップ理由 | 次の走査で再評価 |
 | corrupt_audio | 失敗理由 | fingerprint変更または手動再試行 |
 | interrupted / io_failure | ジョブまたは項目 | 復旧後に再試行 |
 | upstream_unavailable / upstream_rate_limited | 502 / 503 | 待機して明示的に再試行 |
+| artwork_too_large / artwork_unsupported / artwork_invalid | 画像警告。音源の取り込みは継続し既定画像を表示 | 画像の差し替えまたは補完で解消 |
 
 検証：DTO往復、3状態PATCH、未知のエラーcodeのUIフォールバック、購入者タグがSerialize対象に存在しないこと。
 
