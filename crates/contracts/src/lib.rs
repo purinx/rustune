@@ -1,4 +1,4 @@
-//! Public wire representations. Never serialize database rows or raw audio tags.
+//! 公開する通信用の表現。DBの行や音源の生タグをそのままserializeしない。
 
 use serde::{Deserialize, Serialize};
 
@@ -8,8 +8,8 @@ pub mod imports;
 pub mod library;
 pub mod settings;
 
-/// Missing field keeps a manual override; null clears it; a value sets it.
-/// Every field using this type must include serde(default, skip_serializing_if).
+/// フィールド省略は手動値を維持、nullは消去、値は設定を表す。
+/// この型を使うフィールドには必ずserde(default, skip_serializing_if)を付ける。
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Patch<T> {
     #[default]
@@ -39,7 +39,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Patch<T> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidInput;
-/// Trimmed Unicode scalar count, not UTF-8 bytes or grapheme count.
+/// trim後のUnicode scalar数。UTF-8のバイト数や書記素数ではない。
 pub fn validate_text(value: &str, max: usize) -> Result<String, InvalidInput> {
     let value = value.trim();
     if (1..=max).contains(&value.chars().count()) {
@@ -90,7 +90,7 @@ pub struct Page<T> {
     pub library_revision: u64,
 }
 
-/// Connectivity information for the development foundation, not library readiness.
+/// 開発基盤用の接続確認情報。ライブラリが利用可能かどうかは表さない。
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct HealthResponse {
     pub service: String,

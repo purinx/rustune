@@ -25,14 +25,14 @@ id!(EntryId);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidAudio;
 
-/// A range already checked against the container's mdat by inspection.
+/// inspectionがコンテナのmdatと照合済みの範囲。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SampleRange {
     pub offset: u64,
     pub length: u64,
 }
 
-/// Structural evidence supplied by inspection, not proof of ownership or decoding.
+/// inspectionが渡す構造上の根拠。所有の証明やデコード可能性の保証ではない。
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ValidatedAudio {
     size_bytes: u64,
@@ -148,7 +148,7 @@ impl Track {
     pub fn audio(&self) -> &ValidatedAudio {
         &self.audio
     }
-    /// Caller must check persisted exclusions before RetryImport or Publish.
+    /// RetryImportやPublishの前に、呼び出し側が保存済みの除外設定を確認すること。
     pub fn transition(&mut self, event: TrackEvent) -> Result<(), InvalidAudio> {
         use TrackEvent::*;
         use TrackState::*;

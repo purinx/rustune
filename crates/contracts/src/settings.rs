@@ -1,6 +1,6 @@
 use crate::{InvalidInput, Patch};
 use serde::{Deserialize, Serialize};
-/// Absolute source path is exposed only in this settings boundary.
+/// 取り込み元の絶対パスは、この設定の境界でだけ公開する。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Settings {
     pub source_root: String,
@@ -29,7 +29,7 @@ pub struct SettingsPatch {
     pub storefront: Patch<String>,
 }
 impl SettingsPatch {
-    /// Filesystem containment and permission validation belong to server config/source.
+    /// ファイルシステム上の包含関係と権限の検証は、serverのconfig・sourceが担う。
     pub fn validate(&self) -> Result<(), InvalidInput> {
         if matches!(&self.source_root, Patch::Clear)
             || matches!(self.auto_import, Patch::Clear)

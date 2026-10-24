@@ -136,8 +136,8 @@ pub enum AlbumKey {
     Metadata { album: String, artist: String },
 }
 
-/// Manual album/group edits release the old store grouping. Callers persist that
-/// release when applying the edit, including a later Clear back to imported data.
+/// アルバム・グループを手動編集すると、ストア由来の旧グループ化は解除される。
+/// 呼び出し側は編集の適用時にこの解除を保存する。後から取り込み値へClearで戻す場合も同じ。
 pub fn album_key(
     effective: &EffectiveMetadata,
     store_album_id: Option<std::num::NonZeroU64>,

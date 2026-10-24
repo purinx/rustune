@@ -12,7 +12,7 @@ impl SearchRequest {
         Ok(self)
     }
 }
-/// No preview URL or arbitrary image URL is accepted back from the browser.
+/// ブラウザからプレビューURLや任意の画像URLは受け付けない。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Candidate {
     pub id: Uuid,

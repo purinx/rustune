@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-/// Unknown future server codes remain readable for the UI's generic fallback.
+/// 将来追加される未知のcodeも、UIの汎用フォールバック表示のために読み取れる。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiError {
     pub code: String,

@@ -6,7 +6,7 @@ pub const PURCHASE_RULE: &str = "itunes-tag-pattern-v1";
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AudioDigest([u8; 32]);
 impl AudioDigest {
-    /// SHA-256 of the versioned scheme prefix and length-prefixed ASC/AAC samples.
+    /// バージョン付き方式の接頭辞と、長さを前置したASC・AACサンプルのSHA-256。
     pub fn new(bytes: [u8; 32]) -> Self {
         Self(bytes)
     }
@@ -18,7 +18,7 @@ impl AudioDigest {
     }
 }
 
-/// The inspection adapter has matched the local purchase-tag rule. Tags are editable.
+/// inspectionの境界が、この端末の購入タグ規則への一致を確認済み。タグ自体は編集できる。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct VerifiedStoreId(u32);
 impl VerifiedStoreId {
@@ -48,7 +48,7 @@ pub fn resolve_identity(
         .collect()
 }
 
-/// All existing rows matched by either key, with their stored audio digest.
+/// いずれかのキーで一致した既存行すべてと、保存済みの音声digest。
 #[derive(Clone, Debug)]
 pub struct IdentityMatch {
     pub track_id: TrackId,
