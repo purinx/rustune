@@ -12,4 +12,5 @@
 
 - 本プロジェクトの承認済み要件・技術設計は`docs/smartpowers/projects/20261012-214613-personal-music-library/`の`PRD.md`、`DESIGN_DOC.md`、`MODULE_DESIGN.md`を参照する。
 - UIの視覚仕様は`design.md`、機能・状態・通信・永続化は上記設計書に従う。
+- コードの書き方と責務分離は`docs/guidelines/`に従う。コードを書く・変更する前に`docs/guidelines/README.md`と関連する文書を読む。
 - 依存関係や複数モジュールの連携を説明・変更する際は、対応するMermaid図を記載・更新する。
