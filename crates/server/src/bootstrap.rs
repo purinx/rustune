@@ -97,7 +97,7 @@ pub async fn bootstrap(
     config: RuntimeConfig,
     initial_source: &Path,
 ) -> Result<BootstrapContext, BootstrapError> {
-    config::validate_separate_roots(initial_source, &config.data_dir)?;
+    config::reject_overlapping_roots(initial_source, &config.data_dir)?;
     prepare_storage(&config.data_dir)?;
     let lock = ProcessLock::acquire(&config.data_dir)?;
     let repository = Repository::open(&config.data_dir.join("library.sqlite3")).await?;
@@ -115,7 +115,7 @@ pub async fn bootstrap(
         }
     };
     let source = path_from_bytes(stored.source_path_bytes);
-    if let Err(error) = config::validate_separate_roots(&source, &config.data_dir) {
+    if let Err(error) = config::reject_overlapping_roots(&source, &config.data_dir) {
         repository.close().await;
         return Err(error.into());
     }

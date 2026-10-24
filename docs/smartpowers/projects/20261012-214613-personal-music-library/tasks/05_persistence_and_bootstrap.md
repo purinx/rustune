@@ -87,3 +87,10 @@ crates/server/src/db/、config.rs、bootstrap.rs、migrations/、関連統合テ
 - port占有の検出はlistener接続時（タスク11）に試験する。
 - `bootstrap`は新規DB用の既定root（`initial_source`）も保存先との重なりを事前検証する。既存DBで別rootを保存済みでも、既定rootが保存先と重なる構成では起動を拒否する（保存先作成前に取り込み元を変更しないための安全側の判断）。
 - 業務用Repository操作（reserve_track・publish_track・削除・メタデータ・並べ替え等）はタスク09・10で同じpool・スキーマに追加する。
+
+### 追記：PR #2 レビュー指摘への対応（2026-10-24）
+
+- root重なり判定：解決できる最も深い祖先までcanonicalizeし、残りの成分を足して比較するよう変更（`config::root_relation`、`Separate`/`Overlapping`/`Unverifiable`）。設定変更用の`validate_separate_roots`は分離を確認できない場合に`UnverifiableRoots`で拒否し、起動時の`reject_overlapping_roots`は確認済みの重なりだけを失敗とする。
+- web_dist：明示指定・既定値とも`absolute_clean`で検証。既定値はDESIGN_DOCのリリース配置に合わせ`<実行ファイルのディレクトリ>/web`（絶対パス）。開発時はTOMLで絶対パスを明示する（`crates/server/src/db/README.md`に記載）。
+- 追加試験：`web_dist_must_be_absolute_and_defaults_next_to_the_binary`、`overlap_through_alias_is_detected_even_below_unreadable_directory`、`unverifiable_source_is_not_confirmed_separate_but_startup_continues`。
+- 検証：CI相当4コマンドすべて合格（persistence 15件合格・補助2件ignored）。persistence試験10回連続合格。

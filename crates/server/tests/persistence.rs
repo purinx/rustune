@@ -239,6 +239,108 @@ fn runtime_settings_reject_unknown_invalid_values_and_overlapping_roots() {
     );
 }
 
+#[test]
+fn web_dist_must_be_absolute_and_defaults_next_to_the_binary() {
+    let dir = tempfile::tempdir().unwrap();
+    let home = dir.path();
+    for source in [
+        "web_dist='relative'",
+        "web_dist='../assets'",
+        "web_dist='/srv/../assets'",
+        "web_dist=''",
+    ] {
+        assert_eq!(
+            config::load_config(source, home),
+            Err(ConfigError::InvalidPath),
+            "{source}"
+        );
+    }
+    let explicit = config::load_config("web_dist='/opt/rustune/web'", home).unwrap();
+    assert_eq!(
+        explicit.web_dist,
+        std::path::PathBuf::from("/opt/rustune/web")
+    );
+    let release = std::path::Path::new("/Applications/Rustune/bin");
+    let defaulted = config::load_config_with_release_dir("", home, release).unwrap();
+    assert_eq!(defaulted.web_dist, release.join(config::RELEASE_WEB_DIR));
+    let from_exe = config::load_config("", home).unwrap();
+    assert!(from_exe.web_dist.is_absolute());
+    assert!(from_exe.web_dist.ends_with(config::RELEASE_WEB_DIR));
+    assert_eq!(
+        config::load_config_with_release_dir("", home, std::path::Path::new("relative/bin")),
+        Err(ConfigError::InvalidPath)
+    );
+}
+
+#[test]
+fn overlap_through_alias_is_detected_even_below_unreadable_directory() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let data = dir.path().join("data");
+    let private = data.join("private");
+    std::fs::create_dir_all(private.join("music")).unwrap();
+    let alias = dir.path().join("alias");
+    std::os::unix::fs::symlink(&data, &alias).unwrap();
+    // 存在しない成分だけが残る場合も別名を解決して重なりを検出する。
+    assert_eq!(
+        config::validate_separate_roots(&alias.join("missing/music"), &data),
+        Err(ConfigError::OverlappingRoots)
+    );
+    std::fs::set_permissions(&private, std::fs::Permissions::from_mode(0o000)).unwrap();
+    // 指摘の例：/alias -> /data、/data/privateは読めない、source=/alias/private/music。
+    let source = alias.join("private/music");
+    assert_eq!(
+        config::root_relation(&source, &data),
+        Ok(config::RootRelation::Overlapping)
+    );
+    assert_eq!(
+        config::validate_separate_roots(&source, &data),
+        Err(ConfigError::OverlappingRoots)
+    );
+    assert_eq!(
+        config::reject_overlapping_roots(&source, &data),
+        Err(ConfigError::OverlappingRoots)
+    );
+    // 保存先側が別名経由でも同じ。
+    assert_eq!(
+        config::validate_separate_roots(&private.join("music"), &alias),
+        Err(ConfigError::OverlappingRoots)
+    );
+    std::fs::set_permissions(&private, std::fs::Permissions::from_mode(0o700)).unwrap();
+}
+
+#[tokio::test]
+async fn unverifiable_source_is_not_confirmed_separate_but_startup_continues() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let locked = dir.path().join("locked");
+    std::fs::create_dir_all(locked.join("inner/music")).unwrap();
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+    // rootユーザーは権限を無視できるため、その場合は解決でき分離と判定される。
+    let privileged = std::fs::read_dir(&locked).is_ok();
+    let source = locked.join("inner/music");
+    let config =
+        config::load_config_with_release_dir("", dir.path(), std::path::Path::new("/opt/rustune"))
+            .unwrap();
+    let relation = config::root_relation(&source, &config.data_dir).unwrap();
+    if privileged {
+        assert_eq!(relation, config::RootRelation::Separate);
+    } else {
+        assert_eq!(relation, config::RootRelation::Unverifiable);
+        assert_eq!(
+            config::validate_separate_roots(&source, &config.data_dir),
+            Err(ConfigError::UnverifiableRoots)
+        );
+    }
+    let app = bootstrap::bootstrap(config, &source).await.unwrap();
+    if !privileged {
+        assert_eq!(app.source_status, SourceStatus::PermissionDenied);
+    }
+    assert!(!app.ready());
+    app.shutdown().await;
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o700)).unwrap();
+}
+
 #[tokio::test]
 async fn bootstrap_missing_source_stays_not_ready_and_lock_excludes_second_process() {
     let dir = tempfile::tempdir().unwrap();
