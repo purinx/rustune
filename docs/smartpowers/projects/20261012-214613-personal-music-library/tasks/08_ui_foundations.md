@@ -26,7 +26,7 @@ design.md全文、AGENTS.md、MODULE_DESIGN §14・15。プロジェクトの承
 
 ## Expected code areas
 
-crates/web/src/shell/、components/、共通CSS・静的アイコン・index.html
+crates/web/src/shell/、components/、共通CSS・静的アイコン・index.html、開発専用UIギャラリー（crates/stories）
 
 ## Implementation steps
 
@@ -54,3 +54,4 @@ crates/web/src/shell/、components/、共通CSS・静的アイコン・index.htm
 - 予定領域外の変更、共有Cargo設定・router・migrationへの変更が必要なら統合担当へ集約し、並行タスクの所有範囲を侵さない。
 - UI変更時はdesign.mdを全文読み、依存関係・連携を変更したらMermaid図も更新する。
 - 完了時にStatusをDoneへ更新し、変更ファイル、検証結果、未解決事項を記録する。購入音源・購入者情報はコミットしない。
+- 2026-10-24（ユーザー指示）：UIギャラリーを`crates/web`から別crate`rustune-stories`（`crates/stories`）へ分離した。部品と画面を`rustune-web`のlibrary（`src/lib.rs`）へ移し、アプリ本体の`main.rs`とギャラリーの両方がそれを使う。検証：fmt、native Clippy・テスト、WASM Clippy（web・stories）、webのTrunk release build、storiesのTrunk build、`shell-check.mjs`（390px/1280px）、Chromeで`http://127.0.0.1:8081/gallery`の表示とiframe内の画面・ロゴを確認。

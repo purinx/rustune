@@ -21,6 +21,7 @@
 
 ## CSS
 
+- 整形はoxfmtで行う（`mise run fmt`）。1ルールを1行に詰めて書かない。
 - 色・文字サイズ・角丸・余白・影は`:root`のCSS変数（`--background`、`--accent`、`--radius-card`、`--space`など）で定義し、各ルールでは変数を参照する。値を直接書かない。
   - `main`の`style.css`には`#000000`・`font-size: 14px`などの直接指定が残っている。変更時にトークンへ移す。
 - 余白は`--space`（8px）の倍数で書く（`calc(var(--space) * 4)`）。

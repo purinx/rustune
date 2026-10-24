@@ -16,6 +16,9 @@ jobs:
         run: rustup show
       - name: Formatting
         run: cargo fmt --all -- --check
+      - name: CSS・JSの整形チェック
+        # バージョンはmise.tomlの[tools]と合わせる
+        run: npx --yes oxfmt@0.74.0 --check '**/*.css' '**/*.mjs' '**/*.js'
       - name: Native lint
         run: cargo clippy --locked -p rustune-domain -p rustune-contracts -p rustune-server --all-targets -- -D warnings
       - name: Native tests
@@ -27,7 +30,7 @@ jobs:
       - name: Install pinned toolchain
         run: rustup show
       - name: WASM lint
-        run: cargo clippy --locked -p rustune-web --target wasm32-unknown-unknown -- -D warnings
+        run: cargo clippy --locked -p rustune-web -p rustune-stories --target wasm32-unknown-unknown -- -D warnings
       - name: Install Trunk
         run: cargo install trunk --version 0.21.14 --locked
       - name: Release build

@@ -11,6 +11,8 @@ rustune-contracts.workspace = true
 leptos.workspace = true
 gloo-net.workspace = true
 console_error_panic_hook.workspace = true
+leptos_router = "0.8"
+web-sys = { version = "0.3", features = ["Document", "FocusOptions", "HtmlDialogElement", "HtmlElement", "KeyboardEvent", "NodeList"] }
 
 [lints]
 workspace = true

@@ -56,10 +56,22 @@ pub fn validate_number(value: u16) -> Result<(), InvalidInput> {
     }
 }
 
+/// 一覧取得のページ指定。曲・アルバム・取り込み結果などの一覧APIで、どの範囲を返すかをUIが指定する。
+/// 応答は[`Page`]で返る。省略したフィールドは`Default`（offset 0・limit 50）で補い、
+/// 明示した値は`validate`で検証する。
+///
+/// - `#[serde(default)]`：JSONで省略されたフィールドを、下の`Default`実装の値で埋める。
+///   `{}`ならoffset 0・limit 50、`{"offset":100}`ならlimitだけ50になる。
+/// - `#[serde(deny_unknown_fields)]`：定義にないフィールド（`{"page":2}`など）を含むJSONはエラーにする。
+///   名前を打ち間違えたときに、黙って既定値で処理されるのを防ぐ。
+/// - deserializeの時点では範囲を検査しない。受け取った側が`validate()`を呼び、
+///   limitが1〜100、offsetが0〜1,000,000であることを確認する。
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct Pagination {
+    /// 先頭から何件を飛ばすか（0〜1,000,000、省略時は0）。
     pub offset: u64,
+    /// 返す最大件数（1〜100、省略時は50）。
     pub limit: u16,
 }
 impl Default for Pagination {
@@ -71,22 +83,34 @@ impl Default for Pagination {
     }
 }
 impl Pagination {
+    /// 受け付けるoffsetの上限（MODULE_DESIGN.md §11）。
+    pub const MAX_OFFSET: u64 = 1_000_000;
+    /// limitの上限（MODULE_DESIGN.md §11）。
+    pub const MAX_LIMIT: u16 = 100;
+
     pub fn validate(self) -> Result<Self, InvalidInput> {
-        if (1..=100).contains(&self.limit)
-            && self.offset.checked_add(u64::from(self.limit)).is_some()
-        {
+        if (1..=Self::MAX_LIMIT).contains(&self.limit) && self.offset <= Self::MAX_OFFSET {
             Ok(self)
         } else {
             Err(InvalidInput)
         }
     }
 }
+/// 一覧APIの応答。`items`に`offset`から最大`limit`件を入れ、全体の件数と更新番号を添える。
+///
+/// serverは、件数・一覧・`library_revision`を同じ読み取りトランザクションから返す。
+/// そのため、途中で取り込みや編集があっても、3つの値が食い違わない（MODULE_DESIGN §11）。
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Page<T> {
+    /// このページの要素。
     pub items: Vec<T>,
+    /// 条件に一致する全体の件数。UIはページ送りの表示に使う。
     pub total: u64,
+    /// このページの先頭位置（リクエストの値）。
     pub offset: u64,
+    /// このページの最大件数（リクエストの値）。
     pub limit: u16,
+    /// ライブラリ全体の更新番号。UIは、同期で取得した値と比べて変わっていたら一覧を読み直す。
     pub library_revision: u64,
 }
 

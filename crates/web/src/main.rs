@@ -1,54 +1,29 @@
-use leptos::{mount::mount_to_body, prelude::*};
-use rustune_contracts::HealthResponse;
+//! Rustune Web UI（WASM）のエントリポイント。
+//!
+//! # 責務
+//! - ブラウザがWASMを読み込んだときに最初に呼ばれる`main`を提供し、画面全体を`<body>`へ描画（mount）する。
+//! - panic（Rustの回復不能なエラー）の内容をブラウザのコンソールに出すフックを、最初に設定する。
+//!
+//! # 責務外
+//! 画面遷移と各画面の表示は[`rustune_web::shell`]、共通部品は[`rustune_web::components`]が担う
+//! （同じpackageのlibrary、`src/lib.rs`）。ここには画面ロジックを書かない。
+//! UIギャラリーは別crateの`rustune-stories`（`crates/stories`）にある。
+//!
+//! # 処理の流れ
+//! 1. Trunkがビルドした`index.html`が、wasm-bindgenの生成したJSを通じてWASMを読み込み、`main`を呼ぶ。
+//! 2. `console_error_panic_hook::set_once()`で、panic時のメッセージを`console.error`へ出す。
+//!    これがないと、WASMのpanicはコンソールに「unreachable」としか表示されない。
+//! 3. `mount_to_body`にルートのコンポーネントを渡すと、leptosがDOMを生成する。以後はsignal（`components`モジュールの説明を参照）の
+//!    変更に応じて、必要な部分だけを更新する。`main`自体はすぐに終わるが、描画したUIとイベント処理は残り続ける。
+//!
+//! # Rustの読みどころ
+//! - `rustune_web::shell::AppShell`は、同じpackageのlibrary（crate名`rustune_web`）の項目を参照するパス。
+//!   package名の`-`は、Rustのコード上では`_`になる。
+
+use leptos::mount::mount_to_body;
+use rustune_web::shell::AppShell;
 
 fn main() {
     console_error_panic_hook::set_once();
-    mount_to_body(App);
-}
-
-#[component]
-fn App() -> impl IntoView {
-    let status = RwSignal::new("接続を確認してください".to_string());
-    let checking = RwSignal::new(false);
-
-    let check_connection = move |_| {
-        checking.set(true);
-        status.set("接続中…".into());
-        leptos::task::spawn_local(async move {
-            let result = async {
-                let response = gloo_net::http::Request::get("/api/v1/health")
-                    .send()
-                    .await?;
-                if !response.ok() {
-                    return Err(gloo_net::Error::GlooError("server unavailable".into()));
-                }
-                response.json::<HealthResponse>().await
-            }
-            .await;
-            status.set(match result {
-                Ok(health) if health.service == "rustune" => "Rustuneサーバーに接続しました".into(),
-                _ => "接続できませんでした。サーバーの起動を確認してください。".into(),
-            });
-            checking.set(false);
-        });
-    };
-
-    view! {
-        <main class="foundation">
-            <header class="brand"><img src="/icon.svg" alt="" width="40" height="40" />"Rustune"</header>
-            <section class="welcome" aria-labelledby="welcome-title">
-                <p class="eyebrow">"YOUR MUSIC. YOUR SPACE."</p>
-                <h1 id="welcome-title">"好きな音楽を、あなたの場所に。"</h1>
-                <p class="description">"購入した音楽を集めて、整理して、聴く。"</p>
-                <div class="connection">
-                    <span class="connection-label">"開発基盤の接続確認"</span>
-                    <p role="status" aria-live="polite">{move || status.get()}</p>
-                    <button on:click=check_connection disabled=move || checking.get()>
-                        {move || if checking.get() { "確認中…" } else { "接続を確認" }}
-                    </button>
-                </div>
-                <p class="stage-note">"ライブラリの取り込み・再生機能は、これから実装します。"</p>
-            </section>
-        </main>
-    }
+    mount_to_body(AppShell);
 }

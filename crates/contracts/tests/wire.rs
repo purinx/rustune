@@ -62,6 +62,57 @@ fn patch_validates_unicode_scalars_not_bytes_and_rejects_empty_and_invalid_order
     );
 }
 #[test]
+fn pagination_applies_defaults_for_omitted_fields_and_caps_offset() {
+    let default = Pagination {
+        offset: 0,
+        limit: 50,
+    };
+    assert_eq!(from_value::<Pagination>(json!({})).unwrap(), default);
+    assert_eq!(
+        from_value::<Pagination>(json!({"offset":20})).unwrap(),
+        Pagination {
+            offset: 20,
+            limit: 50
+        }
+    );
+    assert_eq!(
+        from_value::<Pagination>(json!({"limit":10})).unwrap(),
+        Pagination {
+            offset: 0,
+            limit: 10
+        }
+    );
+    // 明示値は既定値で上書きされず、そのまま検証される。
+    assert!(
+        from_value::<Pagination>(json!({"limit":0}))
+            .unwrap()
+            .validate()
+            .is_err()
+    );
+    assert!(from_value::<Pagination>(json!({"page":1})).is_err());
+    let max = Pagination {
+        offset: Pagination::MAX_OFFSET,
+        limit: 50,
+    };
+    assert_eq!(max.validate(), Ok(max));
+    assert!(
+        Pagination {
+            offset: Pagination::MAX_OFFSET + 1,
+            limit: 50
+        }
+        .validate()
+        .is_err()
+    );
+    assert!(
+        Pagination {
+            offset: 0,
+            limit: Pagination::MAX_LIMIT
+        }
+        .validate()
+        .is_ok()
+    );
+}
+#[test]
 fn dto_roundtrip_does_not_require_domain_or_raw_tags() {
     let summary = TrackSummary {
         id: Uuid::from_u128(1),

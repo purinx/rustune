@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/domain", "crates/contracts", "crates/server", "crates/web"]
+members = ["crates/domain", "crates/contracts", "crates/server", "crates/web", "crates/stories"]
 default-members = ["crates/domain", "crates/contracts", "crates/server"]
 resolver = "3"
 
